@@ -18,7 +18,8 @@ CREATE TABLE employee(
     ssn NUMERIC(11) PRIMARY KEY,
     tin NUMERIC(9) UNIQUE,
     bdate DATE,
-    name VARCHAR(80)
+    name VARCHAR(80),
+    CHECK (ssn > 0 AND tin > 0)
 );
 
 CREATE TABLE workplace(
@@ -37,6 +38,7 @@ CREATE TABLE works(
     address VARCHAR(80) REFERENCES workplace,
     name VARCHAR(80) REFERENCES department,
     PRIMARY KEY (ssn, address, name)
+    /*CHECK (ssn > 0) preciso? visto que já verificamos no employee */ 
 );
 
 CREATE TABLE office(
@@ -51,7 +53,8 @@ CREATE TABLE product(
     sku VARCHAR(16) PRIMARY KEY,
     name VARCHAR(80),
     description VARCHAR(80),
-    price NUMERIC(10, 2)
+    price NUMERIC(10, 2),
+    CHECK (price > 0)
 );
 
 CREATE TABLE supplier(
@@ -59,12 +62,14 @@ CREATE TABLE supplier(
     sku VARCHAR(16) NOT NULL REFERENCES product,
     name VARCHAR(80),
     address VARCHAR(80),
-    date DATE
+    date DATE,
+    CHECK (tin > 0)
 );
 
 CREATE TABLE eanProduct(
     sku VARCHAR(16) PRIMARY KEY,
-    ean NUMERIC(13)
+    ean NUMERIC(13),
+    CHECK (ean > 0)
 );
 
 CREATE TABLE delivery(
@@ -75,34 +80,36 @@ CREATE TABLE delivery(
 );
 
 CREATE TABLE customer(
-    cust_no NUMERIC(20) PRIMARY KEY,
+    cust_no SERIAL PRIMARY KEY,
     name VARCHAR(80),
     email VARCHAR(80) UNIQUE,
     phone NUMERIC(12),
-    address VARCHAR(80)
+    address VARCHAR(80),
+    CHECK (phone > 0)
 );
 
 CREATE TABLE orders(
-    order_no NUMERIC(20) PRIMARY KEY, 
-    cust_no NUMERIC(20) NOT NULL REFERENCES customer,
+    order_no SERIAL PRIMARY KEY, 
+    cust_no SERIAL NOT NULL REFERENCES customer,
     date DATE
 );
 
 
 CREATE TABLE process(
     ssn NUMERIC(11) REFERENCES employee,
-    order_no NUMERIC(20) REFERENCES orders,
+    order_no SERIAL REFERENCES orders,
     PRIMARY KEY (ssn, order_no)
 );
 
 CREATE TABLE contains(
-    order_no NUMERIC(20) REFERENCES orders,
+    order_no SERIAL REFERENCES orders,
     sku VARCHAR(16) REFERENCES product,
     qty NUMERIC(20),
-    PRIMARY KEY (order_no, sku)
+    PRIMARY KEY (order_no, sku),
+    CHECK (qty > 0)
 );
 
 CREATE TABLE sale(
-    order_no NUMERIC(20) PRIMARY KEY REFERENCES orders,
-    cust_no NUMERIC(20) NOT NULL REFERENCES customer
+    order_no SERIAL PRIMARY KEY REFERENCES orders,
+    cust_no SERIAL NOT NULL REFERENCES customer
 ); 
