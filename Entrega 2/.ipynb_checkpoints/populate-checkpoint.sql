@@ -37,9 +37,9 @@ VALUES ('Operations'),
 INSERT INTO Works(ssn, address, name)
 VALUES (111111111, 'Morada Local Trabalho 1', 'Operations'),
        (222222222, 'Morada Local Trabalho 2', 'Marketing'),
-       (333333333, 'Morada Local Trabalho 3', 'IT'),
+       (333333333, 'Morada Local Trabalho 12', 'IT'),
        (444444444, 'Morada Local Trabalho 4', 'Finance'),
-       (555555555, 'Morada Local Trabalho 5', 'R&D'),
+       (555555555, 'Morada Local Trabalho 11', 'R&D'),
        (666666666, 'Morada Local Trabalho 6', 'HR'),
        (777777777, 'Morada Local Trabalho 7', 'IT'),
        (888888888, 'Morada Local Trabalho 8', 'Legal'),
@@ -117,12 +117,12 @@ VALUES (1990, 'Nome Cliente 1', 'emailcliente1@hotmail.com', 919821223, 'Morada 
 INSERT INTO Orders(order_no, cust_no, date)
 VALUES (1, 1990, '2021-05-25'),
        (2, 1990, '2021-05-27'),
-       (3, 1992, '2023-03-21'),
+       (3, 1992, '2023-01-21'),
        (4, 1991, '2021-07-03'),
        (5, 1993, '2020-03-20'),
        (6, 1994, '2022-01-10'),
        (7, 1995, '2023-02-02'),
-       (8, 1996, '2022-10-31'),
+       (8, 1996, '2023-01-31'),
        (9, 1997, '2021-09-15');
 
 INSERT INTO Process(ssn, order_no)
