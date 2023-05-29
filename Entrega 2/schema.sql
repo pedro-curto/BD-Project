@@ -20,8 +20,8 @@ CREATE TABLE employee(
     bdate DATE,
     name VARCHAR(80),
     CHECK (ssn > 0 AND tin > 0)
-    /* All ssn values existing in this table must be present in the 
-    works table. */
+    /* IC-4: Any ssn in Employee must exist in works. This means that any ssn 
+    value existing in this table must be present in the works table. */
 );
 
 CREATE TABLE workplace(
@@ -40,16 +40,14 @@ CREATE TABLE works(
     address VARCHAR(80) REFERENCES workplace,
     name VARCHAR(80) REFERENCES department,
     PRIMARY KEY (ssn, address, name)
-    /* All ssn values existing in the employee table must be present in this
-    table. */
 );
 
 CREATE TABLE office(
-    address VARCHAR(80) PRIMARY KEY REFERENCES workplace -- ON DELETE CASCADE
+    address VARCHAR(80) PRIMARY KEY REFERENCES workplace ON DELETE CASCADE
 );
 
 CREATE TABLE warehouse(
-    address VARCHAR(80) PRIMARY KEY REFERENCES workplace -- ON DELETE CASCADE
+    address VARCHAR(80) PRIMARY KEY REFERENCES workplace ON DELETE CASCADE
 );
 
 CREATE TABLE product(
@@ -58,8 +56,8 @@ CREATE TABLE product(
     description VARCHAR(80),
     price NUMERIC(10, 2),
     CHECK (price > 0)
-    /* All sku values existing in this table must be present in the supplier
-    table. */
+    /* IC-5: Any sku in Product must exist in Supplier. This means that any 
+    sku value existing in this table must be present in the supplier table. */
 );
 
 CREATE TABLE supplier(
@@ -69,12 +67,10 @@ CREATE TABLE supplier(
     address VARCHAR(80),
     date DATE,
     CHECK (tin > 0)
-    /* All sku values existing in the product table must be present in this
-    table. */
 );
 
 CREATE TABLE eanProduct(
-    sku VARCHAR(16) PRIMARY KEY, -- ON DELETE CASCADE
+    sku VARCHAR(16) PRIMARY KEY REFERENCES product ON DELETE CASCADE, 
     ean NUMERIC(13),
     CHECK (ean > 0)
 );
@@ -99,7 +95,8 @@ CREATE TABLE orders(
     order_no SERIAL PRIMARY KEY, 
     cust_no SERIAL NOT NULL REFERENCES customer,
     date DATE
-    /* All order_no values existing in this table must be present in the 
+    /* IC-6: Any order_no in Order must exist in contains. This means that any 
+    order_no value existing in this table must be present in the 
     contains table. */
 );
 
@@ -116,12 +113,10 @@ CREATE TABLE contains(
     qty NUMERIC(20),
     PRIMARY KEY (order_no, sku),
     CHECK (qty > 0)
-    /* All order_no values existing in the orders table must be present in 
-    this table. */
 );
 
 CREATE TABLE sale(
-    order_no SERIAL PRIMARY KEY REFERENCES orders, --ON DELETE CASCADE
+    order_no SERIAL PRIMARY KEY REFERENCES orders ON DELETE CASCADE,
     cust_no SERIAL NOT NULL REFERENCES customer
     /* IC-7: Customers can only pay for the Sale of an Order they have placed 
     themselves. This implies that all cust_no in sale must be the same as the 
