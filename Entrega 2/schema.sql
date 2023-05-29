@@ -20,6 +20,8 @@ CREATE TABLE employee(
     bdate DATE,
     name VARCHAR(80),
     CHECK (ssn > 0 AND tin > 0)
+    /* All ssn values existing in this table must be present in the 
+    works table. */
 );
 
 CREATE TABLE workplace(
@@ -38,15 +40,16 @@ CREATE TABLE works(
     address VARCHAR(80) REFERENCES workplace,
     name VARCHAR(80) REFERENCES department,
     PRIMARY KEY (ssn, address, name)
-    /*CHECK (ssn > 0) preciso? visto que já verificamos no employee */ 
+    /* All ssn values existing in the employee table must be present in this
+    table. */
 );
 
 CREATE TABLE office(
-    address VARCHAR(80) PRIMARY KEY REFERENCES workplace
+    address VARCHAR(80) PRIMARY KEY REFERENCES workplace -- ON DELETE CASCADE
 );
 
 CREATE TABLE warehouse(
-    address VARCHAR(80) PRIMARY KEY REFERENCES workplace
+    address VARCHAR(80) PRIMARY KEY REFERENCES workplace -- ON DELETE CASCADE
 );
 
 CREATE TABLE product(
@@ -55,6 +58,8 @@ CREATE TABLE product(
     description VARCHAR(80),
     price NUMERIC(10, 2),
     CHECK (price > 0)
+    /* All sku values existing in this table must be present in the supplier
+    table. */
 );
 
 CREATE TABLE supplier(
@@ -64,10 +69,12 @@ CREATE TABLE supplier(
     address VARCHAR(80),
     date DATE,
     CHECK (tin > 0)
+    /* All sku values existing in the product table must be present in this
+    table. */
 );
 
 CREATE TABLE eanProduct(
-    sku VARCHAR(16) PRIMARY KEY,
+    sku VARCHAR(16) PRIMARY KEY, -- ON DELETE CASCADE
     ean NUMERIC(13),
     CHECK (ean > 0)
 );
@@ -92,6 +99,8 @@ CREATE TABLE orders(
     order_no SERIAL PRIMARY KEY, 
     cust_no SERIAL NOT NULL REFERENCES customer,
     date DATE
+    /* All order_no values existing in this table must be present in the 
+    contains table. */
 );
 
 
@@ -107,9 +116,14 @@ CREATE TABLE contains(
     qty NUMERIC(20),
     PRIMARY KEY (order_no, sku),
     CHECK (qty > 0)
+    /* All order_no values existing in the orders table must be present in 
+    this table. */
 );
 
 CREATE TABLE sale(
-    order_no SERIAL PRIMARY KEY REFERENCES orders,
+    order_no SERIAL PRIMARY KEY REFERENCES orders, --ON DELETE CASCADE
     cust_no SERIAL NOT NULL REFERENCES customer
+    /* IC-7: Customers can only pay for the Sale of an Order they have placed 
+    themselves. This implies that all cust_no in sale must be the same as the 
+    cust_no associated with the order_no in the Orders table. */
 ); 
