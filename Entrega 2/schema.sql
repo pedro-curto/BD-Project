@@ -98,6 +98,10 @@ CREATE TABLE orders(
     /* IC-6: Any order_no in Order must exist in contains. This means that any 
     order_no value existing in this table must be present in the 
     contains table. */
+    /* IC-8: The date of a newly inserted order must be on the same day or 
+    after the most recent date on the Orders table. This means that the date
+    of a new order must be greater than or equal to the date of the most
+    recent order. */
 );
 
 
