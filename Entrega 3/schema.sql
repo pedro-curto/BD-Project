@@ -101,4 +101,4 @@ CREATE TABLE delivery(
 address VARCHAR(255) REFERENCES warehouse,
 TIN VARCHAR(20) REFERENCES supplier,
 PRIMARY KEY (address, TIN)
-);
+);  
