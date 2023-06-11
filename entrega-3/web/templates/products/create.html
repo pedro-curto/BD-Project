@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Create Product{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="POST" action="{{ url_for('create_product') }}">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name" required><br>
+    <label for="price">Price:</label>
+    <input type="number" id="price" name="price" min="0" step="0.01" required><br>
+    <label for="description">Description:</label>
+    <textarea id="description" name="description"></textarea><br>
+    <input type="submit" value="Create Product">
+  </form>
+{% endblock %}

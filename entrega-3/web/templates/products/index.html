@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Products{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <a class="action" href="{{ url_for('products_create') }}">Create New Product</a>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Price</th>
+        <th>Description</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products %}
+        <tr>
+          <td>{{ product['name'] }}</td>
+          <td>{{ product['price'] }}</td>
+          <td>{{ product['description'] }}</td>
+          <td>
+            <a class="action" href="{{ url_for('products_update', sku=product['sku']) }}">Edit</a>
+            <a class="action" href="{{ url_for('products_delete', sku=product['sku']) }}">Delete</a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
