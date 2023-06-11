@@ -47,13 +47,14 @@ log = app.logger
 #---------------------------------- PRODUCTS ----------------------------------#
 
 @app.route("/products", methods=["GET"])
-def products_index():
+def product_index():
     with pool.connection() as conn:
         with conn.cursor(row_factory=namedtuple_row) as cur:
             cur.execute(
                 """
-                SELECT SKU, name, description, price, ean
+                SELECT sku, name, description, price, ean
                 FROM product
+                ORDER BY name ASC;
                 """
             )
             products = cur.fetchall()
@@ -61,55 +62,87 @@ def products_index():
     return render_template("products/index.html", products=products)
 
 
-@app.route("/products/create", methods=["POST"])
-def products_create():
-    sku = request.form["sku"]
-    name = request.form["name"]
-    description = request.form["description"]
-    price = request.form["price"]
-    ean = request.form["ean"]
+@app.route("/products/create", methods=["GET", "POST"])
+def create_product():
+    if request.method == "POST":
+        sku = request.form["sku"]
+        name = request.form["name"]
+        description = request.form["description"]
+        price = request.form["price"]
+        ean = request.form["ean_number"]
+        if not ean:
+            ean = None
 
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO product (SKU, name, description, price, ean)
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                (sku, name, description, price, ean),
-            )
-            conn.commit()
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO product (SKU, name, description, price, ean)
+                    VALUES (%s, %s, %s, %s, %s);
+                    """,
+                    (sku, name, description, price, ean),
+                )
+                conn.commit()
 
-    return redirect(url_for("products_index"))
+        return redirect(url_for("product_index"))
+    # in case it is a GET request, we simply render the 'create.html' file
+    else:
+        return render_template("products/create.html")
 
 
 @app.route("/products/<sku>/delete", methods=["POST"])
-def products_delete(sku):
+def delete_product(sku):
     with pool.connection() as conn:
         with conn.cursor() as cur:
+            # we need to delete the product from the dependent tables first
+            cur.execute(
+                """
+                DELETE FROM delivery
+                WHERE tin IN (
+                    SELECT tin
+                    FROM supplier
+                    WHERE sku = %(sku)s
+                );
+                """,
+                {"sku": sku},
+            )
+            cur.execute(
+                """
+                DELETE FROM contains
+                WHERE SKU = %(sku)s;
+                """,
+                {"sku": sku},
+            )
+            cur.execute(
+                """
+                DELETE FROM supplier
+                WHERE SKU = %(sku)s;
+                """,
+                {"sku": sku},
+            )
+            # now, we delete from the product table
             cur.execute(
                 """
                 DELETE FROM product
-                WHERE SKU = %s
+                WHERE SKU = %(sku)s;
                 """,
-                (sku,),
+                {"sku": sku},
             )
             conn.commit()
 
-    return redirect(url_for("products_index"))
+    return redirect(url_for("product_index"))
 
 
 
 @app.route("/products/<sku>/update", methods=["GET", "POST"])
-def products_update(sku):
+def update_product(sku):
     """Update a product."""
-
     # Retrieve the product from the database
     with pool.connection() as conn:
         with conn.cursor(row_factory=namedtuple_row) as cur:
             product = cur.execute(
                 """
-                SELECT sku, name, price, description
+                SELECT sku, name, price, description, ean
                 FROM product
                 WHERE sku = %(sku)s;
                 """,
@@ -119,39 +152,33 @@ def products_update(sku):
 
     if request.method == "POST":
         # Retrieve updated information from the form
-        name = request.form["name"]
         price = request.form["price"]
         description = request.form["description"]
-
         # Perform validation on the updated information
-        error = None
-        if not name:
-            error = "Name is required."
-        elif not price:
+        error = False
+        if not price:
             error = "Price is required."
         elif not description:
             error = "Description is required."
 
         # If there are no validation errors, update the product in the database
-        if error is None:
+        if not error:
             with pool.connection() as conn:
                 with conn.cursor(row_factory=namedtuple_row) as cur:
                     cur.execute(
                         """
                         UPDATE product
-                        SET name = %(name)s, price = %(price)s, description = %(description)s
-                        WHERE product_id = %(product_id)s;
+                        SET price = %(price)s, description = %(description)s
+                        WHERE sku = %(sku)s;
                         """,
                         {
-                            "product_id": product_id,
-                            "name": name,
+                            "sku": sku,
                             "price": price,
                             "description": description,
                         },
                     )
                 conn.commit()
-            return redirect(url_for("products_index"))
-
+            return redirect(url_for("product_index"))
         flash(error)
 
     return render_template("products/update.html", product=product)
@@ -175,7 +202,7 @@ def suppliers_index():
 
 
 @app.route("/suppliers/create", methods=["POST"])
-def suppliers_create():
+def create_supplier():
     tin = request.form["tin"]
     name = request.form["name"]
     address = request.form["address"]
@@ -197,7 +224,7 @@ def suppliers_create():
 
 
 @app.route("/suppliers/<tin>/delete", methods=["POST"])
-def suppliers_delete(tin):
+def delete_supplier(tin):
     with pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -212,127 +239,46 @@ def suppliers_delete(tin):
     return redirect(url_for("suppliers_index"))
 
 
-# --- Clients ---
-@app.route("/clients", methods=["GET"])
-def clients_index():
-    with pool.connection() as conn:
-        with conn.cursor(row_factory=namedtuple_row) as cur:
-            cur.execute(
-                """
-                SELECT cust_no, name, address
-                FROM customer
-                """
-            )
-            clients = cur.fetchall()
+#----------------------------------- CLIENTS ----------------------------------#
 
-    return render_template("clients/index.html", clients=clients)
+# @app.route("/clients", methods=["GET"])
+# def clients_index():
+#     pass
 
 
-@app.route("/clients/create", methods=["POST"])
-def clients_create():
-    cust_no = request.form["cust_no"]
-    name = request.form["name"]
-    address = request.form["address"]
-
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO customer (cust_no, name, address)
-                VALUES (%s, %s, %s)
-                """,
-                (cust_no, name, address),
-            )
-            conn.commit()
-
-    return redirect(url_for("clients_index"))
+# @app.route("/clients/create", methods=["POST"])
+# def clients_create():
+#     pass
 
 
-@app.route("/clients/<cust_no>/delete", methods=["POST"])
-def clients_delete(cust_no):
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                DELETE FROM customer
-                WHERE cust_no = %s
-                """,
-                (cust_no,),
-            )
-            conn.commit()
-
-    return redirect(url_for("clients_index"))
+# @app.route("/clients/<cust_no>/delete", methods=["POST"])
+# def clients_delete(cust_no):
+#     pass
 
 
-# --- Orders and Payments ---
-@app.route("/orders", methods=["GET"])
-def orders_index():
-    with pool.connection() as conn:
-        with conn.cursor(row_factory=namedtuple_row) as cur:
-            cur.execute(
-                """
-                SELECT order_no, cust_no, order_date, status
-                FROM orders
-                """
-            )
-            orders = cur.fetchall()
+#----------------------------------- ORDERS -----------------------------------#
 
-    return render_template("orders/index.html", orders=orders)
+# @app.route("/orders", methods=["GET"])
+# def orders_index():
+#     pass
 
 
-@app.route("/orders/create", methods=["POST"])
-def orders_create():
-    cust_no = request.form["cust_no"]
-    order_date = request.form["order_date"]
-    status = request.form["status"]
-
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO orders (cust_no, order_date, status)
-                VALUES (%s, %s, %s)
-                """,
-                (cust_no, order_date, status),
-            )
-            conn.commit()
-
-    return redirect(url_for("orders_index"))
+# @app.route("/orders/create", methods=["POST"])
+# def orders_create():
+#     pass
 
 
-@app.route("/payments", methods=["GET"])
-def payments_index():
-    with pool.connection() as conn:
-        with conn.cursor(row_factory=namedtuple_row) as cur:
-            cur.execute(
-                """
-                SELECT order_no, payment_date, amount
-                FROM payment
-                """
-            )
-            payments = cur.fetchall()
-
-    return render_template("payments/index.html", payments=payments)
+#---------------------------------- PAYMENTS ----------------------------------#
 
 
-@app.route("/payments/create", methods=["POST"])
-def payments_create():
-    order_no = request.form["order_no"]
-    payment_date = request.form["payment_date"]
-    amount = request.form["amount"]
+# @app.route("/payments", methods=["GET"])
+# def payments_index():
+#     pass
 
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO payment (order_no, payment_date, amount)
-                VALUES (%s, %s, %s)
-                """,
-                (order_no, payment_date, amount),
-            )
-            conn.commit()
 
-    return redirect(url_for("payments_index"))
+# @app.route("/payments/create", methods=["POST"])
+# def payments_create():
+#     pass
 
 
 @app.route("/ping", methods=("GET",))

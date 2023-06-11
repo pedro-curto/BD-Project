@@ -5,29 +5,32 @@
 {% endblock %}
 
 {% block content %}
-  <a class="action" href="{{ url_for('products_create') }}">Create New Product</a>
-  
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Price</th>
-        <th>Description</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for product in products %}
-        <tr>
-          <td>{{ product['name'] }}</td>
-          <td>{{ product['price'] }}</td>
-          <td>{{ product['description'] }}</td>
-          <td>
-            <a class="action" href="{{ url_for('products_update', sku=product['sku']) }}">Edit</a>
-            <a class="action" href="{{ url_for('products_delete', sku=product['sku']) }}">Delete</a>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% for product in products %}
+    <article class="post">
+      <header>
+        <div>
+          <h1>{{ product['name'] }}</h1>
+          <div class="about">SKU: {{ product['sku'] }}</div>
+        </div>
+        <a href="{{ url_for('update_product', sku=product['sku']) }}">Edit</a>
+        <form action="{{ url_for('delete_product', sku=product['sku']) }}" method="post" style="display: inline;">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="action" onclick="return confirm('Are you sure you want to delete this product?');">Delete</button>
+        </form>
+      </header>
+      <p class="body">Price: {{ product['price'] }}€</p>
+      <p class="body">Description: {{ product['description'] }}</p>
+      {% if product['ean'] != NULL %}
+        <p class="body">EAN Number: {{ product['ean'] }}</p>
+      {% else %}
+        <p class="body">EAN Number: Doesn't have one</p>
+      {% endif %}
+
+    </article>
+    {% if not loop.last %}
+      <hr>
+    {% endif %}
+  {% endfor %}
+  <button onclick="location.href='{{ url_for('create_product') }}'">Create Product</button>
 {% endblock %}
+

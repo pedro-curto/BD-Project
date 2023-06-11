@@ -6,14 +6,11 @@
 </head>
 <body>
   <header>
-    <h1>My App</h1>
+    <h1>Online E-Commerce Application</h1>
     <nav>
       <ul>
-        <li><a href="{{ url_for('products_index') }}">Products</a></li>
+        <li><a href="{{ url_for('product_index') }}">Products</a></li>
         <li><a href="{{ url_for('suppliers_index') }}">Suppliers</a></li>
-        <li><a href="{{ url_for('clients_index') }}">Clients</a></li>
-        <li><a href="{{ url_for('orders_index') }}">Orders</a></li>
-        <li><a href="{{ url_for('payments_index') }}">Payments</a></li>
       </ul>
     </nav>
   </header>
@@ -22,10 +19,6 @@
     {% block content %}
     {% endblock %}
   </main>
-  
-  <footer>
-    &copy; 2023 My App
-  </footer>
 </body>
 </html>
 
