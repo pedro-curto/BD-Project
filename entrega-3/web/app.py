@@ -168,14 +168,10 @@ def update_product(sku):
                     cur.execute(
                         """
                         UPDATE product
-                        SET price = %(price)s, description = %(description)s
-                        WHERE sku = %(sku)s;
+                        SET price = %s, description = %s
+                        WHERE sku = %s;
                         """,
-                        {
-                            "sku": sku,
-                            "price": price,
-                            "description": description,
-                        },
+                        (price, description, sku),
                     )
                 conn.commit()
             return redirect(url_for("product_index"))
@@ -194,6 +190,7 @@ def suppliers_index():
                 """
                 SELECT TIN, name, address, SKU, date
                 FROM supplier
+                ORDER BY name ASC;
                 """
             )
             suppliers = cur.fetchall()
@@ -201,38 +198,51 @@ def suppliers_index():
     return render_template("suppliers/index.html", suppliers=suppliers)
 
 
-@app.route("/suppliers/create", methods=["POST"])
+@app.route("/suppliers/create", methods=["GET", "POST"])
 def create_supplier():
-    tin = request.form["tin"]
-    name = request.form["name"]
-    address = request.form["address"]
-    sku = request.form["sku"]
-    date = request.form["date"]
+    if request.method == "POST":
+        tin = request.form["tin"]
+        name = request.form["name"]
+        address = request.form["address"]
+        sku = request.form["sku"]
+        date = request.form["date"]
 
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO supplier (TIN, name, address, SKU, date)
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                (tin, name, address, sku, date),
-            )
-            conn.commit()
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO supplier (TIN, name, address, SKU, date)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (tin, name, address, sku, date),
+                )
+                conn.commit()
 
-    return redirect(url_for("suppliers_index"))
+        return redirect(url_for("suppliers_index"))
+    # in case it is a GET request, we simply render the 'create.html' file
+    else:
+        return render_template("suppliers/create.html")
 
 
 @app.route("/suppliers/<tin>/delete", methods=["POST"])
 def delete_supplier(tin):
     with pool.connection() as conn:
         with conn.cursor() as cur:
+            # delete from dependent table delivery first
+            cur.execute(
+                """
+                DELETE FROM delivery
+                WHERE TIN = %s;
+                """,
+                (tin),
+            )
+            # then, delete from supplier table
             cur.execute(
                 """
                 DELETE FROM supplier
-                WHERE TIN = %s
+                WHERE TIN = %s;
                 """,
-                (tin,),
+                (tin),
             )
             conn.commit()
 
@@ -241,9 +251,20 @@ def delete_supplier(tin):
 
 #----------------------------------- CLIENTS ----------------------------------#
 
-# @app.route("/clients", methods=["GET"])
-# def clients_index():
-#     pass
+@app.route("/clients", methods=["GET"])
+def clients_index():
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=namedtuple_row) as cur:
+            cur.execute(
+                """
+                SELECT cust_no, name, email, phone ,address 
+                FROM customer
+                ORDER BY name ASC;
+                """
+            )
+            clients = cur.fetchall()
+
+    return render_template("clients/index.html", clients=clients)
 
 
 # @app.route("/clients/create", methods=["POST"])

@@ -10,16 +10,20 @@
       <header>
         <div>
           <h1>{{ supplier['name'] }}</h1>
-          <div class="about">in {{ supplier['tin'] }}</div>
+          <div class="about">TIN: {{ supplier['tin'] }}</div>
         </div>
-        <a class="action" href="{{ url_for('delete_supplier', tin=supplier['tin']) }}">Delete</a>
+        <form action="{{ url_for('delete_supplier', tin=supplier['tin']) }}" method="post" style="display: inline;">
+          <input type="hidden" name="_method" value="DELETE">
+          <button type="submit" class="action" onclick="return confirm('Are you sure you want to delete this product?');">Delete</button>
+        </form>
       </header>
-      <p class="body">€ {{ supplier['address'] }}</p>
-      <p class="body">€ {{ supplier['sku'] }}</p>
-      <p class="body">€ {{ supplier['date'] }}</p>
+      <p class="body">Address: {{ supplier['address'] }}</p>
+      <p class="body">Supplied Product SKU: {{ supplier['sku'] }}</p>
+      <p class="body">Contract date: {{ supplier['date'] }}</p>
     </article>
     {% if not loop.last %}
       <hr>
     {% endif %}
   {% endfor %}
+  <button onclick="location.href='{{ url_for('create_supplier') }}'">Insert New Supplier</button>
 {% endblock %}
