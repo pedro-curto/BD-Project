@@ -113,6 +113,7 @@ def delete_product(sku):
                 """,
                 (sku,),
             )
+            # as communicated on slack, we can transform it to 
             cur.execute(
                 """
                 DELETE FROM supplier
@@ -371,14 +372,44 @@ def delete_customer(cust_no):
 
 #----------------------------------- ORDERS -----------------------------------#
 
-# @app.route("/orders", methods=["GET"])
-# def orders_index():
-#     pass
+@app.route("/orders", methods=["GET"])
+def orders_index():
+    with pool.connection() as conn:
+        with conn.cursor(row_factory=namedtuple_row) as cur:
+            cur.execute(
+                """
+                SELECT order_no, cust_no, date
+                FROM orders
+                ORDER BY date ASC;
+                """
+            )
+            orders = cur.fetchall()
+
+    return render_template("orders/index.html", orders=orders)
 
 
-# @app.route("/orders/create", methods=["POST"])
-# def orders_create():
-#     pass
+@app.route("/orders/create", methods=["GET", "POST"])
+def create_order():
+    if request.method == "POST":
+        order_no = request.form["order_no"]
+        cust_no = request.form["cust_no"]
+        date = request.form["date"]     
+           
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    INSERT INTO customer (order_no, cust_no, date)
+                    VALUES(%s, %s, %s);
+                    """,
+                    (order_no, cust_no, date),
+                )
+                conn.commit()
+                
+        return redirect(url_for("orders_index"))
+    # case GET -> renders orders/create.html
+    else:
+        return render_template("orders/create.html")
 
 
 #---------------------------------- PAYMENTS ----------------------------------#
