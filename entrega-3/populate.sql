@@ -1,13 +1,13 @@
 INSERT INTO customer(cust_no, name, email, phone, address)
-VALUES (1990, 'Nome Cliente 1', 'emailcliente1@hotmail.com', 919821223, 'Morada Cliente 1'),
-       (1991, 'Nome Cliente 2', 'emailcliente2@gmail.com', 969988190, 'Morada Cliente 2'),
-       (1992, 'Nome Cliente 3', 'emailcliente3@yahoo.com', 921006124, 'Morada Cliente 3'),
-       (1993, 'Nome Cliente 4', 'emailcliente4@gmail.com', 919872193, 'Morada Cliente 4'),
-       (1994, 'Nome Cliente 5', 'emailcliente5@gmail.com', 927168900, 'Morada Cliente 5'),
-       (1995, 'Nome Cliente 6', 'emailcliente6@gmail.com', 912054123, 'Morada Cliente 6'),
-       (1996, 'Nome Cliente 7', 'emailcliente7@gmail.com', 960183321, 'Morada Cliente 7'),
-       (1997, 'Nome Cliente 8', 'emailcliente8@gmail.com', 915678212, 'Morada Cliente 8'),
-       (1998, 'Nome Cliente 9', 'emailcliente9@gmail.com', 918345678, 'Morada Cliente 9');
+VALUES (1990, 'Nome Cliente 1', 'emailcliente1@hotmail.com', 919821223, 'Rua Jorge Sampaio, nº 1, 1º Esq., 1000-001 Lisboa'),
+       (1991, 'Nome Cliente 2', 'emailcliente2@gmail.com', 969988190, 'Rua Aníbal Cavaco Silva, lote 3, 1000-002 Alverca'),
+       (1992, 'Nome Cliente 3', 'emailcliente3@yahoo.com', 921006124, 'Rua António Costa, nº 27B, R/C Ft., 1000-003 Grândola'),
+       (1993, 'Nome Cliente 4', 'emailcliente4@gmail.com', 919872193, 'Rua António Guterres, nº 4, 2110-012 Beja'),
+       (1994, 'Nome Cliente 5', 'emailcliente5@gmail.com', 927168900, 'Rua Pedro Santana Lopes, nº 12, 3019-012 Porto'),
+       (1995, 'Nome Cliente 6', 'emailcliente6@gmail.com', 912054123, 'Rua Augusto Santos Silva, nº 4, 2019-467 Palmela'),
+       (1996, 'Nome Cliente 7', 'emailcliente7@gmail.com', 960183321, 'Rua Ramalho Eanes, lote 21, 2199-753 Arruda dos Vinhos'),
+       (1997, 'Nome Cliente 8', 'emailcliente8@gmail.com', 915678212, 'Rua Doutor Francisco da Costa Gomes, nº 4, 7689-331 Faro'),
+       (1998, 'Nome Cliente 9', 'emailcliente9@gmail.com', 918345678, 'Rua Francisco Sá Carneiro, nº 4, 9261-212 Braga');
 
 
 INSERT INTO orders(order_no, cust_no, date)
