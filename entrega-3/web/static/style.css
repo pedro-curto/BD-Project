@@ -132,3 +132,17 @@ html {
     align-self: start;
     min-width: 10em;
   }
+
+  .hidden {
+    display: none;
+  }
+  
+  .pay-form {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    z-index: 9999;
+  }

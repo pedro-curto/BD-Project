@@ -384,8 +384,20 @@ def orders_index():
                 """
             )
             orders = cur.fetchall()
+            # selects orders that haven't been paid to display the Pay button
+            # only in those orders, in the orders/index.html file
+            cur.execute(
+                """
+                SELECT order_no
+                FROM orders
+                WHERE order_no NOT IN(
+                    SELECT order_no FROM pay
+                );
+                """
+            )
+            unpaid_orders = [row[0] for row in cur.fetchall()]
 
-    return render_template("orders/index.html", orders=orders)
+    return render_template("orders/index.html", orders=orders, unpaid_orders=unpaid_orders)
 
 
 @app.route("/orders/create", methods=["GET", "POST"])
@@ -412,17 +424,23 @@ def create_order():
         return render_template("orders/create.html")
 
 
-#---------------------------------- PAYMENTS ----------------------------------#
+@app.route("/orders/<order_no>/pay", methods=["GET", "POST"])
+def pay_order():
+    customer_no = request.form["customer_no"]
 
+    # Check if the customer number exists in the database
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM customer WHERE cust_no = %s", (customer_no,))
+            customer = cur.fetchone()
 
-# @app.route("/payments", methods=["GET"])
-# def payments_index():
-#     pass
+        if customer:
+            flash("Payment successful!", "success")
+        else:
+            flash("Customer number not found!", "danger")
+        
+    return redirect(url_for("orders_index"))    
 
-
-# @app.route("/payments/create", methods=["POST"])
-# def payments_create():
-#     pass
 
 
 @app.route("/ping", methods=("GET",))
