@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Pay for Order{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <h2>Order Details</h2>
+  <p>Order number: {{ order_no }}</p>
+  <p>Order cost: {{ order_price }}</p>
+
+  <form method="POST" action="{{ url_for('pay_order', order_no=order_no) }}">
+    <label for="cust_no">Which customer will be paying? </label>
+    <input type="text" id="cust_no" name="cust_no" required><br>
+    <input type="submit" value="Pay For Order">
+  </form>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul class="flash-messages">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+{% endblock %}

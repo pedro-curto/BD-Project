@@ -13,7 +13,7 @@
           <div class="about">Placed by customer: {{ order['cust_no'] }}</div>
         </div>
         {% if order['order_no'] in unpaid_orders %}
-          <button onclick="showPayForm({{ order['order_no'] }})">Pay</button>
+          <button onclick="location.href='{{ url_for('pay_order', order_no=order["order_no"])}}'">Pay</button>
         {% endif %}
       </header>
       <p class="body">Order date: {{ order['date'] }}</p>
@@ -22,14 +22,5 @@
       <hr>
     {% endif %}
   {% endfor %}
-  <!-- Pay Form -->
-  <div id="pay-form-container">
-    <form action="{{ url_for('pay_order') }}" method="POST">
-      <input type="hidden" name="order_no" id="order-no-input">
-      <input type="text" name="customer_number" placeholder="Customer number">
-      <button type="submit">Submit</button>
-    </form>
-  </div>
-
   <button onclick="location.href='{{ url_for('create_order') }}'">Place New Order</button>
 {% endblock %}

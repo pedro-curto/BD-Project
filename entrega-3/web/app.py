@@ -39,6 +39,7 @@ dictConfig(
 )
 
 app = Flask(__name__)
+app.secret_key = "088ac63ff40dba3a745b6edd15a7ca55"
 log = app.logger
 
 
@@ -380,7 +381,7 @@ def orders_index():
                 """
                 SELECT order_no, cust_no, date
                 FROM orders
-                ORDER BY date ASC;
+                ORDER BY order_no ASC;
                 """
             )
             orders = cur.fetchall()
@@ -425,21 +426,65 @@ def create_order():
 
 
 @app.route("/orders/<order_no>/pay", methods=["GET", "POST"])
-def pay_order():
-    customer_no = request.form["customer_no"]
-
-    # Check if the customer number exists in the database
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM customer WHERE cust_no = %s", (customer_no,))
-            customer = cur.fetchone()
-
-        if customer:
-            flash("Payment successful!", "success")
-        else:
-            flash("Customer number not found!", "danger")
+def pay_order(order_no):
+    if request.method == "POST":
+        cust_no = request.form["cust_no"]
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT * 
+                    FROM customer
+                    WHERE cust_no = %(cust_no)s;
+                    """,
+                    {"cust_no": cust_no},
+                ) 
+                customer = cur.fetchone()
+                if customer:
+            # adds to pay table
+                    cur.execute(
+                        """
+                        INSERT INTO pay (order_no, cust_no)
+                        VALUES(%(order_no)s, %(cust_no)s);
+                        """,
+                        {"order_no": order_no, "cust_no": cust_no},
+                    )
+                    conn.commit()
+                
+                    flash("Payment successful!", "success")
+                    return redirect(url_for("orders_index"))
+                else:
+                    flash("Customer not found!", "danger")
+                    return redirect(url_for("pay_order", order_no=order_no))
+    # case GET -> fetches parameters and renders orders/pay.html
+    else:
+        # fetches the relevant parameters
+        with pool.connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT SUM(price*qty) AS order_price
+                    FROM orders AS o
+                    JOIN contains USING(order_no)
+                    JOIN product USING(sku)
+                    WHERE o.order_no = %(order_no)s;
+                    """,
+                    {"order_no": order_no},
+                )
+                order_price = cur.fetchone()[0]
+                
+                cur.execute(
+                    """
+                    SELECT *
+                    FROM orders
+                    WHERE order_no = %(order_no)s;
+                    """,
+                    {"order_no": order_no},
+                )
+                order = cur.fetchone()
         
-    return redirect(url_for("orders_index"))    
+        return render_template("orders/pay.html", order_no=order_no, 
+                               order=order, order_price=order_price)
 
 
 
