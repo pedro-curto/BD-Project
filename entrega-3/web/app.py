@@ -42,7 +42,7 @@ app = Flask(__name__)
 app.secret_key = "088ac63ff40dba3a745b6edd15a7ca55"
 log = app.logger
 
-
+# root goes to product_index -> landing page displays products
 @app.route("/", methods=("GET",))
 
 #---------------------------------- PRODUCTS ----------------------------------#
@@ -71,11 +71,24 @@ def create_product():
         description = request.form["description"]
         price = request.form["price"]
         ean = request.form["ean_number"]
+        # if ean is empty, we transform it to null not to cause an error
         if not ean:
             ean = None
-
         with pool.connection() as conn:
             with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT sku
+                    FROM product
+                    WHERE sku = %(sku)s;
+                    """,
+                    {"sku": sku},
+                )
+                product_sku = cur.fetchone()
+                if product_sku:
+                    flash("SKU already exists! Please choose a new one.")
+                    return redirect(url_for("create_product"))
+                
                 cur.execute(
                     """
                     INSERT INTO product (SKU, name, description, price, ean)
@@ -116,7 +129,7 @@ def delete_product(sku):
                 """,
                 {"sku": sku},
             )
-            # as communicated on slack, we can transform it to 
+            # TODO as communicated on slack, we can transform it to NULL
             cur.execute(
                 """
                 DELETE FROM supplier
@@ -153,36 +166,29 @@ def update_product(sku):
                 {"sku": sku},
                 
             ).fetchone()
-            log.debug(f"Found {cur.rowcount} rows.")
+            log.debug(f"Found {cur.rowcount} rows.") #TODO remove? 
 
     if request.method == "POST":
         # Retrieve updated information from the form
         price = request.form["price"]
         description = request.form["description"]
-        # Perform validation on the updated information
-        error = False
-        if not price:
-            error = "Price is required."
-        elif not description:
-            error = "Description is required."
-
-        # If there are no validation errors, update the product in the database
-        if not error:
-            with pool.connection() as conn:
-                with conn.cursor(row_factory=namedtuple_row) as cur:
-                    cur.execute(
-                        """
-                        UPDATE product
-                        SET price = %(price)s, description = %(description)s
-                        WHERE sku = %(sku)s;
-                        """,
-                        {"price": price, "description": description, "sku": sku},
-                    )
-                conn.commit()
-            return redirect(url_for("product_index"))
-        flash(error)
-
-    return render_template("products/update.html", product=product)
+        
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=namedtuple_row) as cur:
+                cur.execute(
+                    """
+                    UPDATE product
+                    SET price = %(price)s, description = %(description)s
+                    WHERE sku = %(sku)s;
+                    """,
+                    {"price": price, "description": description, 
+                        "sku": sku},
+                )
+            conn.commit()
+        return redirect(url_for("product_index"))
+# case GET -> renders products/update.html
+    else:
+        return render_template("products/update.html", product=product)
 
 
 #--------------------------------- SUPPLIERS ----------------------------------#
@@ -199,7 +205,6 @@ def suppliers_index():
                 """
             )
             suppliers = cur.fetchall()
-
     return render_template("suppliers/index.html", suppliers=suppliers)
 
 
@@ -215,6 +220,33 @@ def create_supplier():
 
         with pool.connection() as conn:
             with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT tin
+                    FROM supplier
+                    WHERE tin = %(tin)s;
+                    """,
+                    {"tin": tin},
+                )
+                supplier_tin = cur.fetchone()
+                if supplier_tin:
+                    flash("TIN already assigned to an existing supplier! \
+                          Please choose a new one.")
+                    return redirect(url_for("create_supplier"))
+                
+                cur.execute(
+                    """
+                    SELECT sku
+                    FROM product
+                    WHERE sku = %(sku)s;
+                    """,
+                    {"sku": sku},
+                )
+                product_sku = cur.fetchone()
+                if not product_sku:
+                    flash("SKU does not exist! Please choose an existing one.")
+                    return redirect(url_for("create_supplier"))
+                
                 cur.execute(
                     """
                     INSERT INTO supplier (TIN, name, address, SKU, date)
@@ -417,6 +449,30 @@ def create_order():
             with conn.cursor() as cur:
                 cur.execute(
                     """
+                    SELECT cust_no
+                    FROM customer
+                    WHERE cust_no = %(cust_no)s;
+                    """,
+                    {"cust_no": cust_no},
+                )
+                customer_number = cur.fetchone()
+                if not customer_number:
+                    flash("Customer not found! Please insert an existing \
+                          customer number.")
+                    return redirect(url_for("create_order"))
+                
+                
+                cur.execute(
+                    """
+                    INSERT INTO customer (order_no, cust_no, date)
+                    VALUES(%(order_no)s, %(cust_no)s, %(date)s);
+                    """,
+                    {"order_no": order_no, "cust_no": cust_no, "date": date},
+                )
+                
+                
+                cur.execute(
+                    """
                     INSERT INTO customer (order_no, cust_no, date)
                     VALUES(%(order_no)s, %(cust_no)s, %(date)s);
                     """,
@@ -427,7 +483,17 @@ def create_order():
         return redirect(url_for("orders_index"))
     # case GET -> renders orders/create.html
     else:
-        return render_template("orders/create.html")
+        # fetches all products to display them in the order creation page
+        with pool.connection() as conn:
+            with conn.cursor(row_factory=namedtuple_row) as cur:
+                cur.execute(
+                    """
+                    SELECT name, description, price
+                    FROM product;
+                    """
+                )
+                products = cur.fetchall()
+        return render_template("orders/create.html", products=products)
 
 
 @app.route("/orders/<order_no>/pay", methods=["GET", "POST"])
@@ -501,3 +567,12 @@ def ping():
 
 if __name__ == "__main__":
     app.run()
+
+
+
+# products/upadate.html before end
+# <form action="{{ url_for('product_index', sku=product['sku']) }}" method="post">
+#     <input type="hidden" name="_method" value="DELETE">
+#     <input type="hidden" name="sku" value="{{ product['sku'] }}">
+#     <input class="danger" type="submit" value="Delete" onclick="return confirm('Are you sure?');">
+#   </form>

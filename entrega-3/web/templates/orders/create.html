@@ -4,8 +4,26 @@
   <h1>{% block title %}Place New Order{% endblock %}</h1>
 {% endblock %}
 
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul class="flash-messages">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
 {% block content %}
-  <form method="POST" action="{{ url_for('create_customer') }}">
+  <form method="POST" action="{{ url_for('create_order') }}">
+    {% for product in products%}
+        <p><label for="sku">{{ product.name }}</label></p>
+        <p><label for="price">Price: {{ product.price }}</label></p>
+        <p><label for="description">Description: {{ product.description }}</label></p>
+        <label for="quantity">Quantity: </label>
+        <input type="number" id="quantity" name="quantity" value=0 required><br>
+    {% endfor %}
+
     <label for="order_no">Order number: </label>
     <input type="text" id="order_no" name="order_no" required><br>
     <label for="cust_no">Customer placing the order: </label>
