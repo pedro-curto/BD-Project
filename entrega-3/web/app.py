@@ -79,9 +79,11 @@ def create_product():
                 cur.execute(
                     """
                     INSERT INTO product (SKU, name, description, price, ean)
-                    VALUES (%s, %s, %s, %s, %s);
+                    VALUES (%(sku)s, %(name)s, %(description)s, %(price)s, 
+                    %(ean)s);
                     """,
-                    (sku, name, description, price, ean),
+                    {"sku": sku, "name": name, "description": description,
+                     "price": price, "ean": ean}
                 )
                 conn.commit()
 
@@ -102,33 +104,33 @@ def delete_product(sku):
                 WHERE tin IN (
                     SELECT tin
                     FROM supplier
-                    WHERE sku = %s
+                    WHERE sku = %(sku)s
                 );
                 """,
-                (sku,),
+                {"sku": sku},
             )
             cur.execute(
                 """
                 DELETE FROM contains
-                WHERE SKU = %s;
+                WHERE SKU = %(sku)s;
                 """,
-                (sku,),
+                {"sku": sku},
             )
             # as communicated on slack, we can transform it to 
             cur.execute(
                 """
                 DELETE FROM supplier
-                WHERE SKU = %s;
+                WHERE SKU = %(sku)s;
                 """,
-                (sku,),
+                {"sku": sku},
             )
             # now, we delete from the product table
             cur.execute(
                 """
                 DELETE FROM product
-                WHERE SKU = %s;
+                WHERE SKU = %(sku)s;
                 """,
-                (sku,),
+                {"sku": sku},
             )
             conn.commit()
 
@@ -146,9 +148,10 @@ def update_product(sku):
                 """
                 SELECT sku, name, price, description, ean
                 FROM product
-                WHERE sku = %s;
+                WHERE sku = %(sku)s;
                 """,
-                (sku,),
+                {"sku": sku},
+                
             ).fetchone()
             log.debug(f"Found {cur.rowcount} rows.")
 
@@ -170,10 +173,10 @@ def update_product(sku):
                     cur.execute(
                         """
                         UPDATE product
-                        SET price = %s, description = %s
-                        WHERE sku = %s;
+                        SET price = %(price)s, description = %(description)s
+                        WHERE sku = %(sku)s;
                         """,
-                        (price, description, sku),
+                        {"price": price, "description": description, "sku": sku},
                     )
                 conn.commit()
             return redirect(url_for("product_index"))
@@ -215,9 +218,10 @@ def create_supplier():
                 cur.execute(
                     """
                     INSERT INTO supplier (TIN, name, address, SKU, date)
-                    VALUES (%s, %s, %s, %s, %s)
+                    VALUES (%(tin)s, %(name)s, %(address)s, %(sku)s, %(date)s);
                     """,
-                    (tin, name, address, sku, date),
+                    {"tin": tin, "name": name, "address": address, "sku": sku, 
+                     "date": date},
                 )
                 conn.commit()
 
@@ -236,17 +240,17 @@ def delete_supplier(tin):
             cur.execute(
                 """
                 DELETE FROM delivery
-                WHERE TIN = %s;
+                WHERE TIN = %(tin)s;
                 """,
-                (tin,),
+                {"tin": tin},
             )
             # then, delete from supplier table
             cur.execute(
                 """
                 DELETE FROM supplier
-                WHERE TIN = %s;
+                WHERE TIN = %(tin)s);
                 """,
-                (tin,),
+                {"tin": tin},
             )
             conn.commit()
 
@@ -286,9 +290,10 @@ def create_customer():
                 cur.execute(
                     """
                     INSERT INTO customer (cust_no, name, email, phone, address)
-                    VALUES(%s, %s, %s, %s, %s);
+                    VALUES(%(cust_no)s, %(name)s, %(email)s, %(phone)s, %(address)s));
                     """,
-                    (cust_no, name, email, phone, address),
+                    {"cust_no": cust_no, "name": name, "email": email, 
+                     "phone": phone, "address": address}
                 )
                 conn.commit()
                 
@@ -311,10 +316,10 @@ def delete_customer(cust_no):
                 WHERE order_no IN(
                     SELECT order_no
                     FROM orders
-                    WHERE cust_no = %s
+                    WHERE cust_no = %(cust_no)s
                 ); 
                 """,
-                (cust_no,),    
+                {"cust_no": cust_no},    
             )
             # contains
             cur.execute(
@@ -323,10 +328,10 @@ def delete_customer(cust_no):
                 WHERE order_no IN(
                     SELECT order_no
                     FROM orders
-                    WHERE cust_no = %s
+                    WHERE cust_no = %(cust_no)s
                 ); 
                 """,
-                (cust_no,),    
+                {"cust_no": cust_no},   
             )
             # pay
             cur.execute(
@@ -335,33 +340,33 @@ def delete_customer(cust_no):
                 WHERE order_no IN (
                     SELECT order_no
                     FROM orders
-                    WHERE cust_no = %s
+                    WHERE cust_no = %(cust_no)s
                 );
                 """,
-                (cust_no,),
+                {"cust_no": cust_no}, 
             )
             cur.execute(
                 """
                 DELETE FROM pay
-                WHERE cust_no = %s;
+                WHERE cust_no = %(cust_no)s;
                 """,
-                (cust_no,),
+                {"cust_no": cust_no},
             )
             # orders
             cur.execute(
                 """
                 DELETE FROM orders
-                WHERE cust_no = %s;
+                WHERE cust_no = %(cust_no)s;
                 """,
-                (cust_no,),
+                {"cust_no": cust_no},
             )
             # finally, delete from customer table
             cur.execute(
                 """
                 DELETE FROM customer
-                WHERE cust_no = %s;
+                WHERE cust_no = %(cust_no)s;
                 """,
-                (cust_no,),
+                {"cust_no": cust_no},
             )
 
         conn.commit()
@@ -413,9 +418,9 @@ def create_order():
                 cur.execute(
                     """
                     INSERT INTO customer (order_no, cust_no, date)
-                    VALUES(%s, %s, %s);
+                    VALUES(%(order_no)s, %(cust_no)s, %(date)s);
                     """,
-                    (order_no, cust_no, date),
+                    {"order_no": order_no, "cust_no": cust_no, "date": date},
                 )
                 conn.commit()
                 
