@@ -42,7 +42,7 @@ app = Flask(__name__)
 app.secret_key = "088ac63ff40dba3a745b6edd15a7ca55"
 log = app.logger
 
-# root goes to product_index -> landing page displays products
+
 @app.route("/", methods=("GET",))
 
 #---------------------------------- PRODUCTS ----------------------------------#
@@ -60,7 +60,7 @@ def product_index():
             )
             products = cur.fetchall()
 
-    return render_template("products/index.html", products=products)    
+    return render_template("products/index.html", products=products)
 
 
 @app.route("/products/create", methods=["GET", "POST"])
@@ -71,32 +71,17 @@ def create_product():
         description = request.form["description"]
         price = request.form["price"]
         ean = request.form["ean_number"]
-        # if ean is empty, we transform it to null not to cause an error
         if not ean:
             ean = None
+
         with pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT sku
-                    FROM product
-                    WHERE sku = %(sku)s;
-                    """,
-                    {"sku": sku},
-                )
-                product_sku = cur.fetchone()
-                if product_sku:
-                    flash("SKU already exists! Please choose a new one.")
-                    return redirect(url_for("create_product"))
-                
-                cur.execute(
-                    """
                     INSERT INTO product (SKU, name, description, price, ean)
-                    VALUES (%(sku)s, %(name)s, %(description)s, %(price)s, 
-                    %(ean)s);
+                    VALUES (%s, %s, %s, %s, %s);
                     """,
-                    {"sku": sku, "name": name, "description": description,
-                     "price": price, "ean": ean}
+                    (sku, name, description, price, ean),
                 )
                 conn.commit()
 
@@ -117,33 +102,33 @@ def delete_product(sku):
                 WHERE tin IN (
                     SELECT tin
                     FROM supplier
-                    WHERE sku = %(sku)s
+                    WHERE sku = %s
                 );
                 """,
-                {"sku": sku},
+                (sku,),
             )
             cur.execute(
                 """
                 DELETE FROM contains
-                WHERE SKU = %(sku)s;
+                WHERE SKU = %s;
                 """,
-                {"sku": sku},
+                (sku,),
             )
-            # TODO as communicated on slack, we can transform it to NULL
+            # as communicated on slack, we can transform it to 
             cur.execute(
                 """
                 DELETE FROM supplier
-                WHERE SKU = %(sku)s;
+                WHERE SKU = %s;
                 """,
-                {"sku": sku},
+                (sku,),
             )
             # now, we delete from the product table
             cur.execute(
                 """
                 DELETE FROM product
-                WHERE SKU = %(sku)s;
+                WHERE SKU = %s;
                 """,
-                {"sku": sku},
+                (sku,),
             )
             conn.commit()
 
@@ -161,34 +146,40 @@ def update_product(sku):
                 """
                 SELECT sku, name, price, description, ean
                 FROM product
-                WHERE sku = %(sku)s;
+                WHERE sku = %s;
                 """,
-                {"sku": sku},
-                
+                (sku,),
             ).fetchone()
-            log.debug(f"Found {cur.rowcount} rows.") #TODO remove? 
+            log.debug(f"Found {cur.rowcount} rows.")
 
     if request.method == "POST":
         # Retrieve updated information from the form
         price = request.form["price"]
         description = request.form["description"]
-        
-        with pool.connection() as conn:
-            with conn.cursor(row_factory=namedtuple_row) as cur:
-                cur.execute(
-                    """
-                    UPDATE product
-                    SET price = %(price)s, description = %(description)s
-                    WHERE sku = %(sku)s;
-                    """,
-                    {"price": price, "description": description, 
-                        "sku": sku},
-                )
-            conn.commit()
-        return redirect(url_for("product_index"))
-# case GET -> renders products/update.html
-    else:
-        return render_template("products/update.html", product=product)
+        # Perform validation on the updated information
+        error = False
+        if not price:
+            error = "Price is required."
+        elif not description:
+            error = "Description is required."
+
+        # If there are no validation errors, update the product in the database
+        if not error:
+            with pool.connection() as conn:
+                with conn.cursor(row_factory=namedtuple_row) as cur:
+                    cur.execute(
+                        """
+                        UPDATE product
+                        SET price = %s, description = %s
+                        WHERE sku = %s;
+                        """,
+                        (price, description, sku),
+                    )
+                conn.commit()
+            return redirect(url_for("product_index"))
+        flash(error)
+
+    return render_template("products/update.html", product=product)
 
 
 #--------------------------------- SUPPLIERS ----------------------------------#
@@ -205,6 +196,7 @@ def suppliers_index():
                 """
             )
             suppliers = cur.fetchall()
+
     return render_template("suppliers/index.html", suppliers=suppliers)
 
 
@@ -222,38 +214,10 @@ def create_supplier():
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT tin
-                    FROM supplier
-                    WHERE tin = %(tin)s;
-                    """,
-                    {"tin": tin},
-                )
-                supplier_tin = cur.fetchone()
-                if supplier_tin:
-                    flash("TIN already assigned to an existing supplier! \
-                          Please choose a new one.")
-                    return redirect(url_for("create_supplier"))
-                
-                cur.execute(
-                    """
-                    SELECT sku
-                    FROM product
-                    WHERE sku = %(sku)s;
-                    """,
-                    {"sku": sku},
-                )
-                product_sku = cur.fetchone()
-                if not product_sku:
-                    flash("SKU does not exist! Please choose an existing one.")
-                    return redirect(url_for("create_supplier"))
-                
-                cur.execute(
-                    """
                     INSERT INTO supplier (TIN, name, address, SKU, date)
-                    VALUES (%(tin)s, %(name)s, %(address)s, %(sku)s, %(date)s);
+                    VALUES (%s, %s, %s, %s, %s)
                     """,
-                    {"tin": tin, "name": name, "address": address, "sku": sku, 
-                     "date": date},
+                    (tin, name, address, sku, date),
                 )
                 conn.commit()
 
@@ -272,17 +236,17 @@ def delete_supplier(tin):
             cur.execute(
                 """
                 DELETE FROM delivery
-                WHERE TIN = %(tin)s;
+                WHERE TIN = %s;
                 """,
-                {"tin": tin},
+                (tin,),
             )
             # then, delete from supplier table
             cur.execute(
                 """
                 DELETE FROM supplier
-                WHERE TIN = %(tin)s;
+                WHERE TIN = %s;
                 """,
-                {"tin": tin},
+                (tin,),
             )
             conn.commit()
 
@@ -310,41 +274,29 @@ def customers_index():
 
 @app.route("/customers/create", methods=["GET", "POST"])
 def create_customer():
-    # case GET -> renders customers/create.html
-    if request.method == "GET":
+    if request.method == "POST":
+        cust_no = request.form["cust_no"]
+        name = request.form["name"]
+        email = request.form["email"]
+        phone = request.form["phone"]
+        address = request.form["address"]
+        
         with pool.connection() as conn:
             with conn.cursor() as cur:
-                # new customer number is going to be the current highest + 1
                 cur.execute(
                     """
-                    SELECT MAX(cust_no)
-                    FROM customer;
-                    """
+                    INSERT INTO customer (cust_no, name, email, phone, address)
+                    VALUES(%s, %s, %s, %s, %s);
+                    """,
+                    (cust_no, name, email, phone, address),
                 )
-                new_cust_no = cur.fetchone()[0] + 1
-        return render_template("customers/create.html", new_cust_no=new_cust_no)
+                conn.commit()
+                
+        return redirect(url_for("customers_index"))
+    # case GET -> renders create.html
+    else:
+        return render_template("customers/create.html")
     
-    # case POST -> inserts new customer in customer table
-    cust_no = request.form["cust_no"]
-    name = request.form["name"]
-    email = request.form["email"]
-    phone = request.form["phone"]
-    address = request.form["address"]
-    
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO customer (cust_no, name, email, phone, address)
-                VALUES(%(cust_no)s, %(name)s, %(email)s, %(phone)s, %(address)s);
-                """,
-                {"cust_no": cust_no, "name": name, "email": email, 
-                    "phone": phone, "address": address}
-            )
-            
-    return redirect(url_for("customers_index"))
-    
-
 
 
 @app.route("/customers/<cust_no>/delete", methods=["POST"])
@@ -359,10 +311,10 @@ def delete_customer(cust_no):
                 WHERE order_no IN(
                     SELECT order_no
                     FROM orders
-                    WHERE cust_no = %(cust_no)s
+                    WHERE cust_no = %s
                 ); 
                 """,
-                {"cust_no": cust_no},    
+                (cust_no,),    
             )
             # contains
             cur.execute(
@@ -371,10 +323,10 @@ def delete_customer(cust_no):
                 WHERE order_no IN(
                     SELECT order_no
                     FROM orders
-                    WHERE cust_no = %(cust_no)s
+                    WHERE cust_no = %s
                 ); 
                 """,
-                {"cust_no": cust_no},   
+                (cust_no,),    
             )
             # pay
             cur.execute(
@@ -383,33 +335,33 @@ def delete_customer(cust_no):
                 WHERE order_no IN (
                     SELECT order_no
                     FROM orders
-                    WHERE cust_no = %(cust_no)s
+                    WHERE cust_no = %s
                 );
                 """,
-                {"cust_no": cust_no}, 
+                (cust_no,),
             )
             cur.execute(
                 """
                 DELETE FROM pay
-                WHERE cust_no = %(cust_no)s;
+                WHERE cust_no = %s;
                 """,
-                {"cust_no": cust_no},
+                (cust_no,),
             )
             # orders
             cur.execute(
                 """
                 DELETE FROM orders
-                WHERE cust_no = %(cust_no)s;
+                WHERE cust_no = %s;
                 """,
-                {"cust_no": cust_no},
+                (cust_no,),
             )
             # finally, delete from customer table
             cur.execute(
                 """
                 DELETE FROM customer
-                WHERE cust_no = %(cust_no)s;
+                WHERE cust_no = %s;
                 """,
-                {"cust_no": cust_no},
+                (cust_no,),
             )
 
         conn.commit()
@@ -449,101 +401,28 @@ def orders_index():
     return render_template("orders/index.html", orders=orders, unpaid_orders=unpaid_orders)
 
 
-
 @app.route("/orders/create", methods=["GET", "POST"])
 def create_order():
-    # case GET -> renders orders/create.html
-    if request.method == "GET":
-        # fetches all products to display them in the order creation page
+    if request.method == "POST":
+        order_no = request.form["order_no"]
+        cust_no = request.form["cust_no"]
+        date = request.form["date"]     
+           
         with pool.connection() as conn:
-            with conn.cursor(row_factory=namedtuple_row) as cur:
+            with conn.cursor() as cur:
                 cur.execute(
                     """
-                    SELECT sku, name, description, price
-                    FROM product
-                    ORDER BY name ASC;
-                    """
-                )
-                products = cur.fetchall()
-
-                # the new order_no is going to be the biggest existing + 1
-                cur.execute(
-                    """
-                    SELECT MAX(order_no)
-                    FROM orders;
-                    """
-                )
-                new_order_no = cur.fetchone()[0] + 1
-        # for product in products:
-        #     flash(product)
-        return render_template("orders/create.html", products=products, 
-                                new_order_no=new_order_no)
-    
-    order_no = request.form["order_no"]
-    cust_no = request.form["cust_no"]
-    date = request.form["date"]
-
-    with pool.connection() as conn:
-        with conn.cursor() as cur:
-            # checks if the customer placing the order exists
-            cur.execute(
-                """
-                SELECT cust_no
-                FROM customer
-                WHERE cust_no = %(cust_no)s;
-                """,
-                {"cust_no": cust_no},
-            )
-            customer_number = cur.fetchone()
-            if not customer_number:
-                flash("Customer not found! Please insert an existing \
-                        customer number.")
-                return redirect(url_for("create_order"))
-            
-            # iterates over the request items, in order to add all ordered 
-            # products (who have quantity > 0) to the contains table
-            any_product = False
-            for key, value in request.form.items():
-                # flash(key)
-                # flash(value)
-                if key.startswith("qty"):
-                    sku = key[3:] 
-                    qty = int(value)
-                    if qty > 0:
-                        any_product = True
-                        cur.execute(
-                            """
-                            INSERT INTO contains (order_no, sku, qty)
-                            VALUES(%(order_no)s, %(sku)s, %(qty)s);
-                            """,
-                            {"order_no": order_no, "sku": sku, "qty": qty},
-                        )
-            # any order must have at least a product 
-            if not any_product:
-                flash("Please add a product to the order!")
-                return redirect(url_for("create_order"))
-            
-            # inserts the order info to the orders table
-            cur.execute(
-                """
-                INSERT INTO orders (order_no, cust_no, date)
-                VALUES(%(order_no)s, %(cust_no)s, %(date)s);
-                """,
-                {"order_no": order_no, "cust_no": cust_no, "date": date},
-            )
-            
-            # finally, checks if the order has been paid: if so, adds to "pay"
-            pay_option = request.form["pay_optn"]
-            if pay_option == "now":
-                cur.execute(
-                    """
-                    INSERT INTO pay (order_no, cust_no)
-                    VALUES(%(order_no)s, %(cust_no)s);
+                    INSERT INTO customer (order_no, cust_no, date)
+                    VALUES(%s, %s, %s);
                     """,
-                    {"order_no": order_no, "cust_no": cust_no},
+                    (order_no, cust_no, date),
                 )
-    return redirect(url_for("orders_index"))
-    
+                conn.commit()
+                
+        return redirect(url_for("orders_index"))
+    # case GET -> renders orders/create.html
+    else:
+        return render_template("orders/create.html")
 
 
 @app.route("/orders/<order_no>/pay", methods=["GET", "POST"])
@@ -552,39 +431,37 @@ def pay_order(order_no):
         cust_no = request.form["cust_no"]
         with pool.connection() as conn:
             with conn.cursor() as cur:
-                # only the customer that placed the order can pay for it
-                # cur.execute(
-                #     """
-                #     SELECT cust_no
-                #     FROM orders
-                #     WHERE order_no = %(order_no)s;
-                #     """,
-                #     {"order_no": order_no},
-                # ) 
-                # order_placed_by = cur.fetchone()[0]
-                # if cust_no == order_placed_by:
-                
-                # adds to pay table
                 cur.execute(
                     """
-                    INSERT INTO pay (order_no, cust_no)
-                    VALUES(%(order_no)s, %(cust_no)s);
+                    SELECT * 
+                    FROM customer
+                    WHERE cust_no = %(cust_no)s;
                     """,
-                    {"order_no": order_no, "cust_no": cust_no},
-                )
-            
-                flash("Payment successful!", "success")
-                return redirect(url_for("orders_index"))
-                # else:
-                #     flash("The order must be paid by the same customer that \
-                #            placed it!", "danger")
-                #     return redirect(url_for("pay_order", order_no=order_no))
+                    {"cust_no": cust_no},
+                ) 
+                customer = cur.fetchone()
+                if customer:
+            # adds to pay table
+                    cur.execute(
+                        """
+                        INSERT INTO pay (order_no, cust_no)
+                        VALUES(%(order_no)s, %(cust_no)s);
+                        """,
+                        {"order_no": order_no, "cust_no": cust_no},
+                    )
+                    conn.commit()
+                
+                    flash("Payment successful!", "success")
+                    return redirect(url_for("orders_index"))
+                else:
+                    flash("Customer not found!", "danger")
+                    return redirect(url_for("pay_order", order_no=order_no))
     # case GET -> fetches parameters and renders orders/pay.html
     else:
+        # fetches the relevant parameters
         with pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    # gets order price
                     """
                     SELECT SUM(price*qty) AS order_price
                     FROM orders AS o
@@ -594,21 +471,20 @@ def pay_order(order_no):
                     """,
                     {"order_no": order_no},
                 )
-                order_price = cur.fetchone()
+                order_price = cur.fetchone()[0]
                 
-                # gets customer that placed the order
                 cur.execute(
                     """
-                    SELECT cust_no, date
+                    SELECT *
                     FROM orders
                     WHERE order_no = %(order_no)s;
                     """,
                     {"order_no": order_no},
                 )
-                order_info = cur.fetchone()
+                order = cur.fetchone()
         
         return render_template("orders/pay.html", order_no=order_no, 
-                               order_info=order_info, order_price=order_price)
+                               order=order, order_price=order_price)
 
 
 
@@ -620,4 +496,3 @@ def ping():
 
 if __name__ == "__main__":
     app.run()
-

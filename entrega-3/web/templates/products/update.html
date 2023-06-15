@@ -5,14 +5,20 @@
 {% endblock %}
 
 {% block content %}
-  <form method="post">
-    <label for="sku">SKU</label>
-    <input name="sku" id="sku" type="text" value="{{ product['sku'] }}" disabled>
-    <label for="price">Price</label>
-    <input name="price" id="price" type="number" min="0" step="0.01" placeholder="0.00" value="{{ product['price'] }}" required>
-    <input type="submit" value="Save">
-    <label for="description">Description:</label>
-    <textarea id="description" name="description" required>{{ product['description'] }}</textarea><br>
+  <form method="post"">
+    <div class="product-div">
+      <label for="sku">SKU:</label>
+      <input name="sku" id="sku" type="text" value="{{ product['sku'] }}" disabled>
+    </div>
+    <div class="product-div">
+      <label for="price">Price:</label>
+      <input name="price" id="price" type="number" min="0" step="0.01" placeholder="0.00" value="{{ product['price'] }}" required>
+    </div>
+    <div class="product-div">
+      <label style="align-self: auto;" for="description">Description:</label>
+      <input id="description" name="description" size="50" required value="{{ product['description'] }}">
+    </div>
+    <input class="footer-btn" type="submit" value="Save">
   </form>
   <hr>
   {% with messages = get_flashed_messages() %}

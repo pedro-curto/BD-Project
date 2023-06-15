@@ -16,15 +16,15 @@
 {% endwith %}
   <h2>Customer creation</h2>
   <form method="POST" action="{{ url_for('create_customer') }}">
-    <input type="hidden" id="cust_no" name="cust_no" value="{{new_cust_no}}"required>Your customer number will be {{ new_cust_no }} <br>
+    <input type="hidden" id="cust_no" name="cust_no" value="{{new_cust_no}}"required>Your customer number will be {{ new_cust_no }} <br><br> 
     <label for="name">Name:</label>
-    <input type="text" id="name" name="name" required><br>
+    <input type="text" id="name" name="name" required><br><br> 
     <label for="email">Email:</label>
-    <input type="text" id="email" name="email" required><br>
+    <input type="text" id="email" name="email" required><br><br> 
     <label for="phone">Phone:</label>
-    <input type="text" id="phone" name="phone" pattern="^[0-9]{9}$" required><br>
+    <input type="text" id="phone" name="phone" pattern="^[0-9]{9}$" required><br><br> 
     <label for="address">Address:</label>
-    <input type="text" id="address" name="address" required><br>
-    <input type="submit" value="Insert New Customer">
+    <input type="text" id="address" name="address" required><br><br> 
+    <input class="footer-btn" type="submit" value="Insert New Customer">
   </form>
 {% endblock %}

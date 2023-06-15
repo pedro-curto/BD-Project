@@ -8,16 +8,16 @@
   <h2>Supplier Creation</h2>
   <form method="POST" action="{{ url_for('create_supplier') }}">
     <label for="tin">TIN:</label>
-    <input type="text" id="tin" name="tin" required><br>
+    <input type="text" id="tin" name="tin" required><br><br> 
     <label for="name">Name:</label>
-    <input type="text" id="name" name="name" required><br>
+    <input type="text" id="name" name="name" required><br><br> 
     <label for="address">Address:</label>
-    <input type="text" id="address" name="address" required><br>
+    <input type="text" id="address" name="address" required><br><br> 
     <label for="sku">SKU:</label>
-    <input type="text" id="sku" name="sku" required><br>
+    <input type="text" id="sku" name="sku" required><br><br> 
     <label for="date">Contract date:</label>
-    <input type="date" id="date" name="date" required><br>
-    <input type="submit" value="Insert New Supplier">
+    <input type="date" id="date" name="date" required><br><br> 
+    <input class="footer-btn" type="submit" value="Insert New Supplier">
   </form>
   
   {% with messages = get_flashed_messages() %}

@@ -8,6 +8,7 @@ body {
   max-width: 960px;
   margin: 0 auto;
   background: #e0e0e1;
+  max-width: 950px;
 }
 
 .main-content {
@@ -17,7 +18,7 @@ body {
   margin-bottom: 2rem;
 }
 
-.border-only-button {
+.delete-btn {
   border: none; /* Border color */
   color: #a84637; /* Text color */
   background-color: transparent; /* Transparent background */
@@ -25,7 +26,7 @@ body {
   cursor: pointer;
 }
 
-.footer_btn {
+.footer-btn {
   border-radius: 5px;
   border: solid 1px #3590b1; /* Border color */
   color: white; /* Text color */
@@ -33,8 +34,21 @@ body {
   font-size: 16px;
   padding: 0.2rem 0.5rem;
   cursor: pointer;
+  margin-top: 1rem;
 }
 
+.footer-btn-2 {
+  border-radius: 5px;
+  border: solid 2px #3590b1; /* Border color */
+  color: #3590b1; /* Text color */
+  background-color: transparent; /* Transparent background */
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.product-div {
+  margin-top: 1rem;
+}
 
 h1, h2, h3, h4, h5, h6 {
   font-family: serif;
@@ -86,6 +100,7 @@ nav ul  {
 nav ul li a, nav ul li span, header .action {
   display: block;
   padding: 0.5rem;
+  font-weight: bold;
 }
 
 .content {

@@ -128,8 +128,9 @@ VALUES (11122233, 'Produto 1', 'Descricao Produto 1', 5.49, 9876543219999),
        (66677788, 'Produto 6', 'Descricao Produto 6', 4.49, 9876123416666),
        (77788899, 'Produto 7', 'Descricao Produto 7', 59.99, 9876123417777),
        (88899900, 'Produto 8', 'Descricao Produto 8', 299.99, NULL),
-       (99900011, 'Produto 9', 'Descricao Produto 9', 1099.99, NULL);
-
+       (99900011, 'Produto 9', 'Descricao Produto 9', 1099.99, NULL),
+       (12345678, 'Produto 10', 'Descricao Produto 10', 299.99, 1112223221111);
+                                                                
 
 INSERT INTO contains(order_no, SKU, qty)
 VALUES (1, 11122233, 10),

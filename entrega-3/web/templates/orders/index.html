@@ -16,23 +16,24 @@
     {% endif %}
 {% endwith %}
 
+<div class="main-content">
   {% for order in orders %}
-    <article class="post">
+    <article class="post" style="width: 22%;">
       <header>
         <div>
           <h1>Order number {{ order['order_no'] }}</h1>
           <div class="about">Placed by customer number {{ order['cust_no'] }}</div>
         </div>
-        {% if order['order_no'] in unpaid_orders %}
-          <button onclick="location.href='{{ url_for('pay_order', order_no=order["order_no"])}}'">Pay</button>
-        {% endif %}
       </header>
       <p class="body">Order date: {{ order['date'] }}</p>
+      {% if order['order_no'] in unpaid_orders %}
+          <button class="footer-btn-2" onclick="location.href='{{ url_for('pay_order', order_no=order["order_no"])}}'">Pay</button>
+      {% endif %}
     </article>
-    {% if not loop.last %}
-      <hr>
+    {% if not loop.last and loop.index % 4 == 0 %}
+      <hr style="width: 100%;">
     {% endif %}
   {% endfor %}
-  <button onclick="location.href='{{ url_for('create_order') }}'">Place New Order</button>
-
+</div>
+  <button class="footer-btn" onclick="location.href='{{ url_for('create_order') }}'">Place New Order</button>
 {% endblock %}
