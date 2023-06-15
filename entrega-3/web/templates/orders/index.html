@@ -5,6 +5,17 @@
 {% endblock %}
 
 {% block content %}
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul class="flash-messages">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+{% endwith %}
+
   {% for order in orders %}
     <article class="post">
       <header>
@@ -24,13 +35,4 @@
   {% endfor %}
   <button onclick="location.href='{{ url_for('create_order') }}'">Place New Order</button>
 
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <ul class="flash-messages">
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
 {% endblock %}

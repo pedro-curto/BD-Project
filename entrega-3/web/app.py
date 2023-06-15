@@ -480,8 +480,8 @@ def create_order():
     
     order_no = request.form["order_no"]
     cust_no = request.form["cust_no"]
-    date = request.form["date"]     
-        
+    date = request.form["date"]
+
     with pool.connection() as conn:
         with conn.cursor() as cur:
             # checks if the customer placing the order exists
@@ -531,6 +531,29 @@ def create_order():
                 {"order_no": order_no, "cust_no": cust_no, "date": date},
             )
             
+<<<<<<< HEAD
+=======
+            # inserts all products that the order contains in the "contains" table
+            # fetches all products from the form
+            products = request.form.getlist("products")
+            flash("Order is being created.")
+            flash(products)
+            for product in products:
+                flash("Product being added to order.")
+                sku = product["sku"]
+                qty = int(product["quantity"])
+                print(sku,qty)
+                if qty > 0:
+                    cur.execute(
+                        """ 
+                        INSERT INTO contains (order_no, sku, qty)
+                        VALUES(%(order_no)s, %(sku)s, %(qty)s);
+                        """,
+                        {"order_no": order_no, "sku": sku, "qty": qty},
+                    )
+            
+
+>>>>>>> 5fdf8ab5e3b68f57d8663061bbefb0e6a44a0b59
             # finally, checks if the order has been paid: if so, adds to "pay"
             pay_option = request.form["pay_optn"]
             if pay_option == "now":
@@ -551,31 +574,33 @@ def pay_order(order_no):
         cust_no = request.form["cust_no"]
         with pool.connection() as conn:
             with conn.cursor() as cur:
+                # only the customer that placed the order can pay for it
+                # cur.execute(
+                #     """
+                #     SELECT cust_no
+                #     FROM orders
+                #     WHERE order_no = %(order_no)s;
+                #     """,
+                #     {"order_no": order_no},
+                # ) 
+                # order_placed_by = cur.fetchone()[0]
+                # if cust_no == order_placed_by:
+                
+                # adds to pay table
                 cur.execute(
                     """
-                    SELECT * 
-                    FROM customer
-                    WHERE cust_no = %(cust_no)s;
+                    INSERT INTO pay (order_no, cust_no)
+                    VALUES(%(order_no)s, %(cust_no)s);
                     """,
-                    {"cust_no": cust_no},
-                ) 
-                customer = cur.fetchone()
-                if customer:
-                    # adds to pay table
-                    cur.execute(
-                        """
-                        INSERT INTO pay (order_no, cust_no)
-                        VALUES(%(order_no)s, %(cust_no)s);
-                        """,
-                        {"order_no": order_no, "cust_no": cust_no},
-                    )
-                    conn.commit()
-                
-                    flash("Payment successful!", "success")
-                    return redirect(url_for("orders_index"))
-                else:
-                    flash("Customer not found!", "danger")
-                    return redirect(url_for("pay_order", order_no=order_no))
+                    {"order_no": order_no, "cust_no": cust_no},
+                )
+            
+                flash("Payment successful!", "success")
+                return redirect(url_for("orders_index"))
+                # else:
+                #     flash("The order must be paid by the same customer that \
+                #            placed it!", "danger")
+                #     return redirect(url_for("pay_order", order_no=order_no))
     # case GET -> fetches parameters and renders orders/pay.html
     else:
         with pool.connection() as conn:
@@ -591,21 +616,21 @@ def pay_order(order_no):
                     """,
                     {"order_no": order_no},
                 )
-                order_price = cur.fetchone()[0]
+                order_price = cur.fetchone()
                 
-                # gets order info
+                # gets customer that placed the order
                 cur.execute(
                     """
-                    SELECT *
+                    SELECT cust_no, date
                     FROM orders
                     WHERE order_no = %(order_no)s;
                     """,
                     {"order_no": order_no},
                 )
-                order = cur.fetchone()
+                order_info = cur.fetchone()
         
         return render_template("orders/pay.html", order_no=order_no, 
-                               order=order, order_price=order_price)
+                               order_info=order_info, order_price=order_price)
 
 
 
@@ -618,11 +643,3 @@ def ping():
 if __name__ == "__main__":
     app.run()
 
-
-
-# products/upadate.html before end
-# <form action="{{ url_for('product_index', sku=product['sku']) }}" method="post">
-#     <input type="hidden" name="_method" value="DELETE">
-#     <input type="hidden" name="sku" value="{{ product['sku'] }}">
-#     <input class="danger" type="submit" value="Delete" onclick="return confirm('Are you sure?');">
-#   </form>

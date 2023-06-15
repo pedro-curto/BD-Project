@@ -8,12 +8,8 @@
   <h2>Order Details</h2>
   <p>Order number: {{ order_no }}</p>
   <p>Order cost: {{ order_price }}</p>
-
-  <form method="POST" action="{{ url_for('pay_order', order_no=order_no) }}">
-    <label for="cust_no">Which customer will be paying? </label>
-    <input type="text" id="cust_no" name="cust_no" required><br>
-    <input type="submit" value="Pay For Order">
-  </form>
+  <p>Order placed by customer {{ order_info.customer_no }}</p>
+  <button type="submit">Pay</button>
 
   {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -24,4 +20,5 @@
       </ul>
     {% endif %}
   {% endwith %}
+
 {% endblock %}
