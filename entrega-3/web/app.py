@@ -457,8 +457,8 @@ def create_order():
     
     order_no = request.form["order_no"]
     cust_no = request.form["cust_no"]
-    date = request.form["date"]     
-        
+    date = request.form["date"]
+
     with pool.connection() as conn:
         with conn.cursor() as cur:
             # checks if the customer placing the order exists
@@ -488,9 +488,10 @@ def create_order():
             # inserts all products that the order contains in the "contains" table
             # fetches all products from the form
             products = request.form.getlist("products")
-            print(products)
             flash("Order is being created.")
+            flash(products)
             for product in products:
+                flash("Product being added to order.")
                 sku = product["sku"]
                 qty = int(product["quantity"])
                 print(sku,qty)

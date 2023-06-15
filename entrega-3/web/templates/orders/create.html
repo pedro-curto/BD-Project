@@ -12,7 +12,8 @@
         <p><label for="price">Price: {{ product.price }}</label></p>
         <p><label for="description">Description: {{ product.description }}</label></p>
         <label for="quantity">Quantity: </label>
-        <input type="number" id="quantity" name="quantity" min = "0" value="0" required><br>
+        <input type="number" id="quantity" name="products[{{ loop.index0 }}][quantity]" min="0" value="0" required><br>
+        <input type="hidden" name="products[{{ loop.index0 }}][sku]" value="{{ product.sku }}">
     {% endfor %}
     <label for="order_no">Order number: </label>
     <input type="text" id="order_no" name="order_no" required><br>
