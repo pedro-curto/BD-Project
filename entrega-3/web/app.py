@@ -531,29 +531,6 @@ def create_order():
                 {"order_no": order_no, "cust_no": cust_no, "date": date},
             )
             
-<<<<<<< HEAD
-=======
-            # inserts all products that the order contains in the "contains" table
-            # fetches all products from the form
-            products = request.form.getlist("products")
-            flash("Order is being created.")
-            flash(products)
-            for product in products:
-                flash("Product being added to order.")
-                sku = product["sku"]
-                qty = int(product["quantity"])
-                print(sku,qty)
-                if qty > 0:
-                    cur.execute(
-                        """ 
-                        INSERT INTO contains (order_no, sku, qty)
-                        VALUES(%(order_no)s, %(sku)s, %(qty)s);
-                        """,
-                        {"order_no": order_no, "sku": sku, "qty": qty},
-                    )
-            
-
->>>>>>> 5fdf8ab5e3b68f57d8663061bbefb0e6a44a0b59
             # finally, checks if the order has been paid: if so, adds to "pay"
             pay_option = request.form["pay_optn"]
             if pay_option == "now":

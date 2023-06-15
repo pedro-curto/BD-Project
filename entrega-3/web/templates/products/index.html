@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block content %}
+  <div class="main-content">
   {% for product in products %}
     <article class="post">
       <header>
@@ -12,11 +13,7 @@
           <h1>{{ product['name'] }}</h1>
           <div class="about">SKU: {{ product['sku'] }}</div>
         </div>
-        <a href="{{ url_for('update_product', sku=product['sku']) }}">Edit</a>
-        <form action="{{ url_for('delete_product', sku=product['sku']) }}" method="post" style="display: inline;">
-          <input type="hidden" name="_method" value="DELETE">
-          <button type="submit" class="action" onclick="return confirm('Are you sure you want to delete this product?');">Delete</button>
-        </form>
+        
       </header>
       <p class="body">Price: {{ product['price'] }}€</p>
       <p class="body">Description: {{ product['description'] }}</p>
@@ -25,12 +22,26 @@
       {% else %}
         <p class="body">EAN Number: Doesn't have one</p>
       {% endif %}
+      <div style="display: flex;">
+        <a style="margin-right: 0.5rem; color:#3083ba;" href="{{ url_for('update_product', sku=product['sku']) }}">Edit</a>
+        <div>|</div>  
+        <form action="{{ url_for('delete_product', sku=product['sku']) }}" method="post" style="display: flex;">
+          <input type="hidden" name="_method" value="DELETE">
+          <button class="border-only-button" type="submit" class="action" onclick="return confirm('Are you sure you want to delete this product?');">Delete</button>
+        </form>
+      </div>
+
 
     </article>
-    {% if not loop.last %}
-      <hr>
+    {% if not loop.last and loop.index % 3 == 0 %}
+      <hr style="width: 100%;">
     {% endif %}
   {% endfor %}
-  <button onclick="location.href='{{ url_for('create_product') }}'">Create Product</button>
+  </div>
+  <div style="display: flex; flex-direction: column;">
+    <div style="justify-content: center; text-align: center;">
+      1....2....3...4....
+    </div>
+    <button class="footer_btn" style="margin-left: auto;" onclick="location.href='{{ url_for('create_product') }}'">Create Product</button>
+  </div>
 {% endblock %}
-
