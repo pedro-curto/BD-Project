@@ -280,7 +280,7 @@ def delete_supplier(tin):
             cur.execute(
                 """
                 DELETE FROM supplier
-                WHERE TIN = %(tin)s);
+                WHERE TIN = %(tin)s;
                 """,
                 {"tin": tin},
             )
@@ -438,51 +438,11 @@ def orders_index():
     return render_template("orders/index.html", orders=orders, unpaid_orders=unpaid_orders)
 
 
+
 @app.route("/orders/create", methods=["GET", "POST"])
 def create_order():
-    if request.method == "POST":
-        order_no = request.form["order_no"]
-        cust_no = request.form["cust_no"]
-        date = request.form["date"]     
-           
-        with pool.connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    """
-                    SELECT cust_no
-                    FROM customer
-                    WHERE cust_no = %(cust_no)s;
-                    """,
-                    {"cust_no": cust_no},
-                )
-                customer_number = cur.fetchone()
-                if not customer_number:
-                    flash("Customer not found! Please insert an existing \
-                          customer number.")
-                    return redirect(url_for("create_order"))
-                
-                
-                cur.execute(
-                    """
-                    INSERT INTO customer (order_no, cust_no, date)
-                    VALUES(%(order_no)s, %(cust_no)s, %(date)s);
-                    """,
-                    {"order_no": order_no, "cust_no": cust_no, "date": date},
-                )
-                
-                
-                cur.execute(
-                    """
-                    INSERT INTO customer (order_no, cust_no, date)
-                    VALUES(%(order_no)s, %(cust_no)s, %(date)s);
-                    """,
-                    {"order_no": order_no, "cust_no": cust_no, "date": date},
-                )
-                conn.commit()
-                
-        return redirect(url_for("orders_index"))
     # case GET -> renders orders/create.html
-    else:
+    if request.method == "GET":
         # fetches all products to display them in the order creation page
         with pool.connection() as conn:
             with conn.cursor(row_factory=namedtuple_row) as cur:
@@ -493,7 +453,66 @@ def create_order():
                     """
                 )
                 products = cur.fetchall()
-        return render_template("orders/create.html", products=products)
+        return render_template("orders/create.html", products=products) 
+    
+    order_no = request.form["order_no"]
+    cust_no = request.form["cust_no"]
+    date = request.form["date"]     
+        
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            # checks if the customer placing the order exists
+            cur.execute(
+                """
+                SELECT cust_no
+                FROM customer
+                WHERE cust_no = %(cust_no)s;
+                """,
+                {"cust_no": cust_no},
+            )
+            customer_number = cur.fetchone()
+            if not customer_number:
+                flash("Customer not found! Please insert an existing \
+                        customer number.")
+                return redirect(url_for("create_order"))
+            
+            # inserts the order info to the orders table
+            cur.execute(
+                """
+                INSERT INTO orders (order_no, cust_no, date)
+                VALUES(%(order_no)s, %(cust_no)s, %(date)s);
+                """,
+                {"order_no": order_no, "cust_no": cust_no, "date": date},
+            )
+            
+            # inserts all products that the order contains in the "contains" table
+            # fetches all products from the form
+            products = request.form.getlist("products")
+            
+            for product in products:
+                sku = product.sku
+                qty = product.quantity
+                if int(qty) > 0:
+                    cur.execute(
+                        """ 
+                        INSERT INTO contains (order_no, sku, qty)
+                        VALUES(%(order_no)s, %(sku)s, %(qty)s);
+                        """,
+                        {"order_no": order_no, "sku": sku, "qty": qty},
+                    )                    
+                        
+            # finally, checks if the order has been paid: if so, adds to "pay"
+            pay_option = request.form["pay_optn"]
+            if pay_option == "now":
+                cur.execute(
+                    """
+                    INSERT INTO pay (order_no, cust_no)
+                    VALUES(%(order_no)s, %(cust_no)s);
+                    """,
+                    {"order_no": order_no, "cust_no": cust_no},
+                )
+    return redirect(url_for("orders_index"))
+    
 
 
 @app.route("/orders/<order_no>/pay", methods=["GET", "POST"])
@@ -512,7 +531,7 @@ def pay_order(order_no):
                 ) 
                 customer = cur.fetchone()
                 if customer:
-            # adds to pay table
+                    # adds to pay table
                     cur.execute(
                         """
                         INSERT INTO pay (order_no, cust_no)
@@ -529,10 +548,10 @@ def pay_order(order_no):
                     return redirect(url_for("pay_order", order_no=order_no))
     # case GET -> fetches parameters and renders orders/pay.html
     else:
-        # fetches the relevant parameters
         with pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
+                    # gets order price
                     """
                     SELECT SUM(price*qty) AS order_price
                     FROM orders AS o
@@ -544,6 +563,7 @@ def pay_order(order_no):
                 )
                 order_price = cur.fetchone()[0]
                 
+                # gets order info
                 cur.execute(
                     """
                     SELECT *
