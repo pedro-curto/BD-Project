@@ -1,38 +1,38 @@
 INSERT INTO customer(cust_no, name, email, phone, address)
-VALUES (1990, 'Nome Cliente 1', 'emailcliente1@hotmail.com', 919821223, 'Rua Jorge Sampaio, nº 1, 1º Esq., 1000-001 Lisboa'),
-       (1991, 'Nome Cliente 2', 'emailcliente2@gmail.com', 969988190, 'Rua Aníbal Cavaco Silva, lote 3, 1000-002 Alverca'),
-       (1992, 'Nome Cliente 3', 'emailcliente3@yahoo.com', 921006124, 'Rua António Costa, nº 27B, R/C Ft., 1000-003 Grândola'),
-       (1993, 'Nome Cliente 4', 'emailcliente4@gmail.com', 919872193, 'Rua António Guterres, nº 4, 2110-012 Beja'),
-       (1994, 'Nome Cliente 5', 'emailcliente5@gmail.com', 927168900, 'Rua Pedro Santana Lopes, nº 12, 3019-012 Porto'),
-       (1995, 'Nome Cliente 6', 'emailcliente6@gmail.com', 912054123, 'Rua Augusto Santos Silva, nº 4, 2019-467 Palmela'),
-       (1996, 'Nome Cliente 7', 'emailcliente7@gmail.com', 960183321, 'Rua Ramalho Eanes, lote 21, 2199-753 Arruda dos Vinhos'),
-       (1997, 'Nome Cliente 8', 'emailcliente8@gmail.com', 915678212, 'Rua Doutor Francisco da Costa Gomes, nº 4, 7689-331 Faro'),
-       (1998, 'Nome Cliente 9', 'emailcliente9@gmail.com', 918345678, 'Rua Francisco Sá Carneiro, nº 4, 9261-212 Braga');
+VALUES (1, 'Nome Cliente 1', 'emailcliente1@hotmail.com', 919821223, 'Rua Jorge Sampaio, nº 1, 1º Esq., 1000-001 Lisboa'),
+       (2, 'Nome Cliente 2', 'emailcliente2@gmail.com', 969988190, 'Rua Aníbal Cavaco Silva, lote 3, 1000-002 Alverca'),
+       (3, 'Nome Cliente 3', 'emailcliente3@yahoo.com', 921006124, 'Rua António Costa, nº 27B, R/C Ft., 1000-003 Grândola'),
+       (4, 'Nome Cliente 4', 'emailcliente4@gmail.com', 919872193, 'Rua António Guterres, nº 4, 2110-012 Beja'),
+       (5, 'Nome Cliente 5', 'emailcliente5@gmail.com', 927168900, 'Rua Pedro Santana Lopes, nº 12, 3019-012 Porto'),
+       (6, 'Nome Cliente 6', 'emailcliente6@gmail.com', 912054123, 'Rua Augusto Santos Silva, nº 4, 2019-467 Palmela'),
+       (7, 'Nome Cliente 7', 'emailcliente7@gmail.com', 960183321, 'Rua Ramalho Eanes, lote 21, 2199-753 Arruda dos Vinhos'),
+       (8, 'Nome Cliente 8', 'emailcliente8@gmail.com', 915678212, 'Rua Doutor Francisco da Costa Gomes, nº 4, 7689-331 Faro'),
+       (9, 'Nome Cliente 9', 'emailcliente9@gmail.com', 918345678, 'Rua Francisco Sá Carneiro, nº 4, 9261-212 Braga');
 
 
 INSERT INTO orders(order_no, cust_no, date)
-VALUES (1, 1990, '2021-05-25'),
-       (2, 1990, '2021-05-27'),
-       (3, 1992, '2023-01-21'),
-       (4, 1991, '2021-07-03'),
-       (5, 1993, '2020-03-20'),
-       (6, 1994, '2022-01-10'),
-       (7, 1995, '2023-02-02'),
-       (8, 1996, '2023-01-31'),
-       (9, 1997, '2021-09-15'),
-       (10, 1990, '2022-03-29'),
-       (11, 1998, '2022-03-29'),
-       (12, 1992, '2022-07-21'),
-       (13, 1993, '2022-07-21');
+VALUES (1, 1, '2021-05-25'),
+       (2, 1, '2021-05-27'),
+       (3, 3, '2023-01-21'),
+       (4, 2, '2021-07-03'),
+       (5, 4, '2020-03-20'),
+       (6, 5, '2022-01-10'),
+       (7, 6, '2023-02-02'),
+       (8, 7, '2023-01-31'),
+       (9, 8, '2021-09-15'),
+       (10, 1, '2022-03-29'),
+       (11, 9, '2022-03-29'),
+       (12, 3, '2022-07-21'),
+       (13, 4, '2022-07-21');
 
 
 INSERT INTO pay(order_no, cust_no)
-VALUES (1, 1990),
-       (2, 1993),
-       (3, 1992),
-       (4, 1991),
-       (7, 1995),
-       (9, 1998);
+VALUES (1, 1),
+       (2, 4),
+       (3, 3),
+       (4, 2),
+       (7, 6),
+       (9, 9);
 
 
 INSERT INTO employee (ssn, TIN, bdate, name) 
@@ -42,9 +42,9 @@ VALUES (111111111, 123123123, '2003-08-12', 'Empregado 1'),
        (444444444, 987987987, '2002-10-02', 'Empregado 4'),
        (555555555, 678678678, '2001-09-04', 'Empregado 5'),
        (666666666, 567567567, '2000-08-07', 'Empregado 6'),
-       (777777777, 890890890, '1998-07-06', 'Empregado 7'),
+       (777777777, 890890890, '9-07-06', 'Empregado 7'),
        (888888888, 345345345, '1999-06-10', 'Empregado 8'),
-       (999999999, 234234234, '1990-05-20', 'Empregado 9'); 
+       (999999999, 234234234, '1-05-20', 'Empregado 9'); 
 
 
 
@@ -150,7 +150,17 @@ VALUES (1, 11122233, 10),
        (8, 99900011, 300),
        (9, 11122233, 100),
        (9, 33344455, 200),
-       (9, 88899900, 12);
+       (9, 88899900, 12),
+       (10, 11122233, 100),
+       (10, 77788899, 200),
+       (11, 11122233, 13),
+       (11, 44455566, 76),
+       (11, 88899900, 12),
+       (12, 55566677, 100),
+       (12, 33344455, 200),
+       (12, 88899900, 12),
+       (13, 22233344, 4),
+       (13, 66677788, 51);
 
 
 INSERT INTO supplier(TIN, SKU, name, address, date)

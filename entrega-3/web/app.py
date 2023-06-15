@@ -310,30 +310,41 @@ def customers_index():
 
 @app.route("/customers/create", methods=["GET", "POST"])
 def create_customer():
-    if request.method == "POST":
-        cust_no = request.form["cust_no"]
-        name = request.form["name"]
-        email = request.form["email"]
-        phone = request.form["phone"]
-        address = request.form["address"]
-        
+    # case GET -> renders customers/create.html
+    if request.method == "GET":
         with pool.connection() as conn:
             with conn.cursor() as cur:
+                # new customer number is going to be the current highest + 1
                 cur.execute(
                     """
-                    INSERT INTO customer (cust_no, name, email, phone, address)
-                    VALUES(%(cust_no)s, %(name)s, %(email)s, %(phone)s, %(address)s));
-                    """,
-                    {"cust_no": cust_no, "name": name, "email": email, 
-                     "phone": phone, "address": address}
+                    SELECT MAX(cust_no)
+                    FROM customer;
+                    """
                 )
-                conn.commit()
-                
-        return redirect(url_for("customers_index"))
-    # case GET -> renders create.html
-    else:
-        return render_template("customers/create.html")
+                new_cust_no = cur.fetchone()[0] + 1
+        return render_template("customers/create.html", new_cust_no=new_cust_no)
     
+    # case POST -> inserts new customer in customer table
+    cust_no = request.form["cust_no"]
+    name = request.form["name"]
+    email = request.form["email"]
+    phone = request.form["phone"]
+    address = request.form["address"]
+    
+    with pool.connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO customer (cust_no, name, email, phone, address)
+                VALUES(%(cust_no)s, %(name)s, %(email)s, %(phone)s, %(address)s);
+                """,
+                {"cust_no": cust_no, "name": name, "email": email, 
+                    "phone": phone, "address": address}
+            )
+            
+    return redirect(url_for("customers_index"))
+    
+
 
 
 @app.route("/customers/<cust_no>/delete", methods=["POST"])
@@ -448,12 +459,24 @@ def create_order():
             with conn.cursor(row_factory=namedtuple_row) as cur:
                 cur.execute(
                     """
-                    SELECT name, description, price
+                    SELECT sku, name, description, price
                     FROM product;
                     """
                 )
                 products = cur.fetchall()
-        return render_template("orders/create.html", products=products) 
+
+                # the new order_no is going to be the biggest existing + 1
+                cur.execute(
+                    """
+                    SELECT MAX(order_no)
+                    FROM orders;
+                    """
+                )
+                new_order_no = cur.fetchone()[0] + 1
+        # for product in products:
+        #     flash(product)
+        return render_template("orders/create.html", products=products, 
+                                new_order_no=new_order_no)
     
     order_no = request.form["order_no"]
     cust_no = request.form["cust_no"]
@@ -476,6 +499,29 @@ def create_order():
                         customer number.")
                 return redirect(url_for("create_order"))
             
+            # iterates over the request items, in order to add all ordered 
+            # products (who have quantity > 0) to the contains table
+            any_product = False
+            for key, value in request.form.items():
+                # flash(key)
+                # flash(value)
+                if key.startswith("qty"):
+                    sku = key[3:] 
+                    qty = int(value)
+                    if qty > 0:
+                        any_product = True
+                        cur.execute(
+                            """
+                            INSERT INTO contains (order_no, sku, qty)
+                            VALUES(%(order_no)s, %(sku)s, %(qty)s);
+                            """,
+                            {"order_no": order_no, "sku": sku, "qty": qty},
+                        )
+            # any order must have at least a product 
+            if not any_product:
+                flash("Please add a product to the order!")
+                return redirect(url_for("create_order"))
+            
             # inserts the order info to the orders table
             cur.execute(
                 """
@@ -485,22 +531,6 @@ def create_order():
                 {"order_no": order_no, "cust_no": cust_no, "date": date},
             )
             
-            # inserts all products that the order contains in the "contains" table
-            # fetches all products from the form
-            products = request.form.getlist("products")
-            
-            for product in products:
-                sku = product.sku
-                qty = product.quantity
-                if int(qty) > 0:
-                    cur.execute(
-                        """ 
-                        INSERT INTO contains (order_no, sku, qty)
-                        VALUES(%(order_no)s, %(sku)s, %(qty)s);
-                        """,
-                        {"order_no": order_no, "sku": sku, "qty": qty},
-                    )                    
-                        
             # finally, checks if the order has been paid: if so, adds to "pay"
             pay_option = request.form["pay_optn"]
             if pay_option == "now":

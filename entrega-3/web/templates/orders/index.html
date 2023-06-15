@@ -10,7 +10,7 @@
       <header>
         <div>
           <h1>Order number {{ order['order_no'] }}</h1>
-          <div class="about">Placed by customer: {{ order['cust_no'] }}</div>
+          <div class="about">Placed by customer number {{ order['cust_no'] }}</div>
         </div>
         {% if order['order_no'] in unpaid_orders %}
           <button onclick="location.href='{{ url_for('pay_order', order_no=order["order_no"])}}'">Pay</button>

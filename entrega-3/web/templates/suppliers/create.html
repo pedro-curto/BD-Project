@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block content %}
+  <h2>Supplier Creation</h2>
   <form method="POST" action="{{ url_for('create_supplier') }}">
     <label for="tin">TIN:</label>
     <input type="text" id="tin" name="tin" required><br>

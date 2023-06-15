@@ -20,7 +20,7 @@
       </header>
       <p class="body">Price: {{ product['price'] }}€</p>
       <p class="body">Description: {{ product['description'] }}</p>
-      {% if product['ean'] != NULL %}
+      {% if product['ean'] != None %}
         <p class="body">EAN Number: {{ product['ean'] }}</p>
       {% else %}
         <p class="body">EAN Number: Doesn't have one</p>
