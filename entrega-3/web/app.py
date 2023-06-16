@@ -340,6 +340,7 @@ def create_customer():
         error = "Insert a valid email! (name@domain)"
     if not match("\d{9}", phone):
         error = "Insert a valid phone number! (9 digits long)"
+    # portuguese address format (<street ...> xxxx-xxx city)
     if not match(r".+\s\d{4}-\d{3}\s.+", address):
         error = "Address must end in a postal code and city!"
     if error:
@@ -366,7 +367,8 @@ def create_customer():
 def delete_customer(cust_no):
     with pool.connection() as conn:
         with conn.cursor() as cur:
-            # delete orders with associated cust_no first
+            # deletes all entries from other tables that 
+            # depend on the customer table
             # process
             cur.execute(
                 """
@@ -486,12 +488,10 @@ def create_order():
                     FROM orders;
                     """
                 )
-                new_order_no = cur.fetchone()[0] + 1
-        # for product in products:
-        #     flash(product)
+                new_order_no = cur.fetchone()[0] + 1                
         return render_template("orders/create.html", products=products, 
                                 new_order_no=new_order_no)
-    
+    # case POST
     order_no = request.form["order_no"]
     cust_no = request.form["cust_no"]
     date = request.form["date"]
@@ -515,29 +515,19 @@ def create_order():
             
             # iterates over the request items, in order to add all ordered 
             # products (who have quantity > 0) to the contains table
-            try:
-                # inserts every product ordered in the contains table
-                for key, value in request.form.items():
-                    if key.startswith("qty"):
-                        sku = key[3:] 
-                        qty = int(value)
-                        if qty > 0:
-                            #any_product = True
-                            cur.execute(
-                                """
-                                INSERT INTO contains (order_no, sku, qty)
-                                VALUES(%(order_no)s, %(sku)s, %(qty)s);
-                                """,
-                                {"order_no": order_no, "sku": sku, "qty": qty},
+            # inserts every product ordered in the contains table
+            for key, value in request.form.items():
+                if key.startswith("qty"):
+                    sku = key[3:] 
+                    qty = int(value)
+                    if qty > 0:
+                        cur.execute(
+                            """
+                            INSERT INTO contains (order_no, sku, qty)
+                            VALUES(%(order_no)s, %(sku)s, %(qty)s);
+                            """,
+                            {"order_no": order_no, "sku": sku, "qty": qty},
                             )
-                            
-            except psycopg.DatabaseError as e:
-                error_code = e.diag.sqlstate
-                if error_code == "23503" and "contains_order_no_fkey" in e.diag.constraint_name:
-                    # Handle the integrity restriction violation related to the contains table
-                    flash("Order must appear in the Contains table.")
-                
-            
             # inserts the order info to the orders table
             cur.execute(
                 """
@@ -546,14 +536,6 @@ def create_order():
                 """,
                 {"order_no": order_no, "cust_no": cust_no, "date": date},
             )
-            
-            
-            # # any order must have at least a product 
-            # if not any_product:
-            #     flash("Please add a product to the order!")
-            #     return redirect(url_for("create_order"))
-            
-            
             # finally, checks if the order has been paid: if so, adds to "pay"
             pay_option = request.form["pay_optn"]
             if pay_option == "now":
