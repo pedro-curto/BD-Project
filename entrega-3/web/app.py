@@ -2,7 +2,6 @@
 from logging.config import dictConfig
 
 import psycopg
-import datetime
 from re import match
 from flask import flash
 from flask import Flask
@@ -116,18 +115,7 @@ def create_product():
 def delete_product(sku):
     with pool.connection() as conn:
         with conn.cursor() as cur:
-            # we need to delete the product from the dependent tables first
-            cur.execute(
-                """
-                DELETE FROM delivery
-                WHERE tin IN (
-                    SELECT tin
-                    FROM supplier
-                    WHERE sku = %(sku)s
-                );
-                """,
-                {"sku": sku},
-            )
+            # we need to delete all rows on contains that have this product
             cur.execute(
                 """
                 DELETE FROM contains
@@ -135,15 +123,17 @@ def delete_product(sku):
                 """,
                 {"sku": sku},
             )
-            # TODO as communicated on slack, we can transform it to NULL
+            # as communicated on slack, if there are entries on the supplier
+            # table with this product' sku, we can set them to null
             cur.execute(
                 """
-                DELETE FROM supplier
+                UPDATE supplier
+                SET SKU = NULL
                 WHERE SKU = %(sku)s;
                 """,
                 {"sku": sku},
             )
-            # now, we delete from the product table
+            # finally, we delete from the product table
             cur.execute(
                 """
                 DELETE FROM product
@@ -151,7 +141,7 @@ def delete_product(sku):
                 """,
                 {"sku": sku},
             )
-
+    flash("Product deleted successfully!")
     return redirect(url_for("product_index"))
 
 
@@ -171,7 +161,6 @@ def update_product(sku):
                 {"sku": sku},
                 
             ).fetchone()
-            log.debug(f"Found {cur.rowcount} rows.") #TODO remove? 
 
     if request.method == "POST":
         # Retrieve updated information from the form
@@ -298,7 +287,8 @@ def delete_supplier(tin):
                 """,
                 {"tin": tin},
             )
-
+            
+    flash("Supplier deleted successfully!")
     return redirect(url_for("suppliers_index"))
 
 
