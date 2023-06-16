@@ -2,7 +2,6 @@
 from logging.config import dictConfig
 
 import psycopg
-import datetime
 from re import match
 from flask import flash
 from flask import Flask
@@ -49,11 +48,11 @@ log = app.logger
 
 #---------------------------------- PRODUCTS ----------------------------------#
 
-@app.route("/products/", methods=["GET"])
+@app.route("/products", methods=["GET"])
 def product_index(page=1):
     page = int(request.args.get("page", 1))
     with pool.connection() as conn:
-        with conn.cursor(row_factory=namedtuple_row) as cur:    
+        with conn.cursor(row_factory=namedtuple_row) as cur:
             cur.execute(
                 """
                 SELECT sku, name, description, price, ean
@@ -61,10 +60,11 @@ def product_index(page=1):
                 ORDER BY name ASC
                 LIMIT 9 OFFSET %(offset)s;
                 """,
-                {"offset": (page-1)*9}
-            )   
+                {"offset": (page-1)*9},
+            )
             products = cur.fetchall()
-    return render_template("products/index.html", products=products, page=page)
+
+    return render_template("products/index.html", products=products, page=page)    
 
 
 @app.route("/products/create", methods=["GET", "POST"])
@@ -118,18 +118,7 @@ def create_product():
 def delete_product(sku):
     with pool.connection() as conn:
         with conn.cursor() as cur:
-            # we need to delete the product from the dependent tables first
-            cur.execute(
-                """
-                DELETE FROM delivery
-                WHERE tin IN (
-                    SELECT tin
-                    FROM supplier
-                    WHERE sku = %(sku)s
-                );
-                """,
-                {"sku": sku},
-            )
+            # we need to delete all rows on contains that have this product
             cur.execute(
                 """
                 DELETE FROM contains
@@ -137,15 +126,17 @@ def delete_product(sku):
                 """,
                 {"sku": sku},
             )
-            # TODO as communicated on slack, we can transform it to NULL
+            # as communicated on slack, if there are entries on the supplier
+            # table with this product' sku, we can set them to null
             cur.execute(
                 """
-                DELETE FROM supplier
+                UPDATE supplier
+                SET SKU = NULL
                 WHERE SKU = %(sku)s;
                 """,
                 {"sku": sku},
             )
-            # now, we delete from the product table
+            # finally, we delete from the product table
             cur.execute(
                 """
                 DELETE FROM product
@@ -153,7 +144,7 @@ def delete_product(sku):
                 """,
                 {"sku": sku},
             )
-
+    flash("Product deleted successfully!")
     return redirect(url_for("product_index"))
 
 
@@ -173,7 +164,6 @@ def update_product(sku):
                 {"sku": sku},
                 
             ).fetchone()
-            log.debug(f"Found {cur.rowcount} rows.") #TODO remove? 
 
     if request.method == "POST":
         # Retrieve updated information from the form
@@ -209,12 +199,12 @@ def suppliers_index(page=1):
                 SELECT TIN, name, address, SKU, date
                 FROM supplier
                 ORDER BY name ASC
-                LIMIT 9 OFFSET %(offset)s;
-                """
-                ,{"offset": (page-1)*9}
+                LIMIT 9 OFSET %(offset)s;
+                """,
+                {"offset": (page-1)*9},
             )
             suppliers = cur.fetchall()
-    return render_template("suppliers/index.html", suppliers=suppliers,page=page)
+    return render_template("suppliers/index.html", suppliers=suppliers, page=page)
 
 
 
@@ -303,7 +293,8 @@ def delete_supplier(tin):
                 """,
                 {"tin": tin},
             )
-
+            
+    flash("Supplier deleted successfully!")
     return redirect(url_for("suppliers_index"))
 
 
@@ -311,7 +302,7 @@ def delete_supplier(tin):
 
 @app.route("/customers", methods=["GET"])
 def customers_index(page=1):
-    page = int(request.args.get("page", 1))
+    page=int(request.args.get("page", 1))
     with pool.connection() as conn:
         with conn.cursor(row_factory=namedtuple_row) as cur:
             cur.execute(
@@ -321,7 +312,7 @@ def customers_index(page=1):
                 ORDER BY name ASC
                 LIMIT 6 OFFSET %(offset)s;
                 """,
-                {"offset": (page-1)*6}
+                {"offset": (page-1)*6},
             )
             customers = cur.fetchall()
 
@@ -358,6 +349,7 @@ def create_customer():
         error = "Insert a valid email! (name@domain)"
     if not match("\d{9}", phone):
         error = "Insert a valid phone number! (9 digits long)"
+    # portuguese address format (<street ...> xxxx-xxx city)
     if not match(r".+\s\d{4}-\d{3}\s.+", address):
         error = "Address must end in a postal code and city!"
     if error:
@@ -384,7 +376,8 @@ def create_customer():
 def delete_customer(cust_no):
     with pool.connection() as conn:
         with conn.cursor() as cur:
-            # delete orders with associated cust_no first
+            # deletes all entries from other tables that 
+            # depend on the customer table
             # process
             cur.execute(
                 """
@@ -454,7 +447,7 @@ def delete_customer(cust_no):
 
 @app.route("/orders", methods=["GET"])
 def orders_index(page=1):
-    page = int(request.args.get("page", 1))
+    page=int(request.args.get("page", 1))
     with pool.connection() as conn:
         with conn.cursor(row_factory=namedtuple_row) as cur:
             cur.execute(
@@ -464,7 +457,7 @@ def orders_index(page=1):
                 ORDER BY order_no ASC
                 LIMIT 16 OFFSET %(offset)s;
                 """,
-                {"offset": (page-1)*16}
+                {"offset": (page-1)*16},
             )
             orders = cur.fetchall()
             # selects orders that haven't been paid to display the Pay button
@@ -478,11 +471,12 @@ def orders_index(page=1):
                 )
                 LIMIT 16 OFFSET %(offset)s;
                 """,
-                {"offset": (page-1)*16}
+                {"offset": (page-1)*16},
             )
             unpaid_orders = [row[0] for row in cur.fetchall()]
 
-    return render_template("orders/index.html", orders=orders, unpaid_orders=unpaid_orders, page=page)
+    return render_template("orders/index.html", orders=orders, 
+                           unpaid_orders=unpaid_orders, page=page)
 
 
 
@@ -509,12 +503,10 @@ def create_order():
                     FROM orders;
                     """
                 )
-                new_order_no = cur.fetchone()[0] + 1
-        # for product in products:
-        #     flash(product)
+                new_order_no = cur.fetchone()[0] + 1                
         return render_template("orders/create.html", products=products, 
                                 new_order_no=new_order_no)
-    
+    # case POST
     order_no = request.form["order_no"]
     cust_no = request.form["cust_no"]
     date = request.form["date"]
@@ -536,30 +528,20 @@ def create_order():
                         customer number.")
                 return redirect(url_for("create_order"))
             
-            # iterates over the request items, in order to add all ordered 
-            # products (who have quantity > 0) to the contains table
-            try:
-                # inserts every product ordered in the contains table
-                for key, value in request.form.items():
-                    if key.startswith("qty"):
-                        sku = key[3:] 
-                        qty = int(value)
-                        if qty > 0:
-                            #any_product = True
-                            cur.execute(
-                                """
-                                INSERT INTO contains (order_no, sku, qty)
-                                VALUES(%(order_no)s, %(sku)s, %(qty)s);
-                                """,
-                                {"order_no": order_no, "sku": sku, "qty": qty},
-                            )
-                            
-            except psycopg.DatabaseError as e:
-                error_code = e.diag.sqlstate
-                if error_code == "23503" and "contains_order_no_fkey" in e.diag.constraint_name:
-                    # Handle the integrity restriction violation related to the contains table
-                    flash("Order must appear in the Contains table.")
-                
+            # checks if the order contains at least one product, and fetches
+            # product quantities
+            has_products = False
+            quantities = []
+            for key, value in request.form.items():
+                if key.startswith("qty"):
+                    qty = int(value)
+                    if qty > 0:
+                        sku = key[3:]
+                        has_products = True
+                        quantities.append((sku, qty))
+            if not has_products:
+                flash("An order must contain at least one product!")
+                return redirect(url_for("create_order"))
             
             # inserts the order info to the orders table
             cur.execute(
@@ -570,13 +552,16 @@ def create_order():
                 {"order_no": order_no, "cust_no": cust_no, "date": date},
             )
             
-            
-            # # any order must have at least a product 
-            # if not any_product:
-            #     flash("Please add a product to the order!")
-            #     return redirect(url_for("create_order"))
-            
-            
+            # inserts every product ordered in the contains table
+            for sku, qty in quantities:
+                cur.execute(
+                    """
+                    INSERT INTO contains (order_no, sku, qty)
+                    VALUES(%(order_no)s, %(sku)s, %(qty)s);
+                    """,
+                    {"order_no": order_no, "sku": sku, "qty": qty},
+                )
+                
             # finally, checks if the order has been paid: if so, adds to "pay"
             pay_option = request.form["pay_optn"]
             if pay_option == "now":
@@ -650,4 +635,3 @@ def ping():
 
 if __name__ == "__main__":
     app.run()
-
