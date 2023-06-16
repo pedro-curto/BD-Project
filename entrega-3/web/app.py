@@ -199,7 +199,7 @@ def suppliers_index(page=1):
                 SELECT TIN, name, address, SKU, date
                 FROM supplier
                 ORDER BY name ASC
-                LIMIT 9 OFSET %(offset)s;
+                LIMIT 9 OFFSET %(offset)s;
                 """,
                 {"offset": (page-1)*9},
             )
