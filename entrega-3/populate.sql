@@ -42,9 +42,9 @@ VALUES (111111111, 123123123, '2003-08-12', 'Empregado 1'),
        (444444444, 987987987, '2002-10-02', 'Empregado 4'),
        (555555555, 678678678, '2001-09-04', 'Empregado 5'),
        (666666666, 567567567, '2000-08-07', 'Empregado 6'),
-       (777777777, 890890890, '9-07-06', 'Empregado 7'),
+       (777777777, 890890890, '1999-07-06', 'Empregado 7'),
        (888888888, 345345345, '1999-06-10', 'Empregado 8'),
-       (999999999, 234234234, '1-05-20', 'Empregado 9'); 
+       (999999999, 234234234, '2001-05-20', 'Empregado 9'); 
 
 
 
@@ -129,7 +129,7 @@ VALUES (11122233, 'Produto 1', 'Descricao Produto 1', 5.49, 9876543219999),
        (77788899, 'Produto 7', 'Descricao Produto 7', 59.99, 9876123417777),
        (88899900, 'Produto 8', 'Descricao Produto 8', 299.99, NULL),
        (99900011, 'Produto 9', 'Descricao Produto 9', 1099.99, NULL),
-       (12345678, 'Produto 10', 'Descricao Produto 10', 299.99, 1112223221111);
+       (21921921, 'Bananas', 'Amarelas', 0.79, 2121212121211);
                                                                 
 
 INSERT INTO contains(order_no, SKU, qty)

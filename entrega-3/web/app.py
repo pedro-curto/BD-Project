@@ -502,26 +502,28 @@ def create_order():
             
             # iterates over the request items, in order to add all ordered 
             # products (who have quantity > 0) to the contains table
-            any_product = False
-            for key, value in request.form.items():
-                # flash(key)
-                # flash(value)
-                if key.startswith("qty"):
-                    sku = key[3:] 
-                    qty = int(value)
-                    if qty > 0:
-                        any_product = True
-                        cur.execute(
-                            """
-                            INSERT INTO contains (order_no, sku, qty)
-                            VALUES(%(order_no)s, %(sku)s, %(qty)s);
-                            """,
-                            {"order_no": order_no, "sku": sku, "qty": qty},
-                        )
-            # any order must have at least a product 
-            if not any_product:
-                flash("Please add a product to the order!")
-                return redirect(url_for("create_order"))
+            try:
+                # inserts every product ordered in the contains table
+                for key, value in request.form.items():
+                    if key.startswith("qty"):
+                        sku = key[3:] 
+                        qty = int(value)
+                        if qty > 0:
+                            #any_product = True
+                            cur.execute(
+                                """
+                                INSERT INTO contains (order_no, sku, qty)
+                                VALUES(%(order_no)s, %(sku)s, %(qty)s);
+                                """,
+                                {"order_no": order_no, "sku": sku, "qty": qty},
+                            )
+                            
+            except psycopg.DatabaseError as e:
+                error_code = e.diag.sqlstate
+                if error_code == "23503" and "contains_order_no_fkey" in e.diag.constraint_name:
+                    # Handle the integrity restriction violation related to the contains table
+                    flash("Order must appear in the Contains table.")
+                
             
             # inserts the order info to the orders table
             cur.execute(
@@ -531,6 +533,13 @@ def create_order():
                 """,
                 {"order_no": order_no, "cust_no": cust_no, "date": date},
             )
+            
+            
+            # # any order must have at least a product 
+            # if not any_product:
+            #     flash("Please add a product to the order!")
+            #     return redirect(url_for("create_order"))
+            
             
             # finally, checks if the order has been paid: if so, adds to "pay"
             pay_option = request.form["pay_optn"]
@@ -594,7 +603,7 @@ def pay_order(order_no):
                     """,
                     {"order_no": order_no},
                 )
-                order_price = cur.fetchone()
+                order_price = cur.fetchone()[0]
                 
                 # gets customer that placed the order
                 cur.execute(
