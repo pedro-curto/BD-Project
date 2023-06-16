@@ -49,20 +49,22 @@ log = app.logger
 
 #---------------------------------- PRODUCTS ----------------------------------#
 
-@app.route("/products", methods=["GET"])
-def product_index():
+@app.route("/products/", methods=["GET"])
+def product_index(page=1):
+    page = int(request.args.get("page", 1))
     with pool.connection() as conn:
-        with conn.cursor(row_factory=namedtuple_row) as cur:
+        with conn.cursor(row_factory=namedtuple_row) as cur:    
             cur.execute(
                 """
                 SELECT sku, name, description, price, ean
                 FROM product
-                ORDER BY name ASC;
-                """
-            )
+                ORDER BY name ASC
+                LIMIT 9 OFFSET %(offset)s;
+                """,
+                {"offset": (page-1)*9}
+            )   
             products = cur.fetchall()
-
-    return render_template("products/index.html", products=products)    
+    return render_template("products/index.html", products=products, page=page)
 
 
 @app.route("/products/create", methods=["GET", "POST"])
@@ -198,18 +200,21 @@ def update_product(sku):
 #--------------------------------- SUPPLIERS ----------------------------------#
 
 @app.route("/suppliers", methods=["GET"])
-def suppliers_index():
+def suppliers_index(page=1):
+    page = int(request.args.get("page", 1))
     with pool.connection() as conn:
         with conn.cursor(row_factory=namedtuple_row) as cur:
             cur.execute(
                 """
                 SELECT TIN, name, address, SKU, date
                 FROM supplier
-                ORDER BY name ASC;
+                ORDER BY name ASC
+                LIMIT 9 OFFSET %(offset)s;
                 """
+                ,{"offset": (page-1)*9}
             )
             suppliers = cur.fetchall()
-    return render_template("suppliers/index.html", suppliers=suppliers)
+    return render_template("suppliers/index.html", suppliers=suppliers,page=page)
 
 
 
@@ -305,19 +310,22 @@ def delete_supplier(tin):
 #---------------------------------- CUSTOMERS ---------------------------------#
 
 @app.route("/customers", methods=["GET"])
-def customers_index():
+def customers_index(page=1):
+    page = int(request.args.get("page", 1))
     with pool.connection() as conn:
         with conn.cursor(row_factory=namedtuple_row) as cur:
             cur.execute(
                 """
                 SELECT cust_no, name, email, phone ,address 
                 FROM customer
-                ORDER BY name ASC;
-                """
+                ORDER BY name ASC
+                LIMIT 6 OFFSET %(offset)s;
+                """,
+                {"offset": (page-1)*6}
             )
             customers = cur.fetchall()
 
-    return render_template("customers/index.html", customers=customers)
+    return render_template("customers/index.html", customers=customers, page=page)
 
 
 
@@ -445,15 +453,18 @@ def delete_customer(cust_no):
 #----------------------------------- ORDERS -----------------------------------#
 
 @app.route("/orders", methods=["GET"])
-def orders_index():
+def orders_index(page=1):
+    page = int(request.args.get("page", 1))
     with pool.connection() as conn:
         with conn.cursor(row_factory=namedtuple_row) as cur:
             cur.execute(
                 """
                 SELECT order_no, cust_no, date
                 FROM orders
-                ORDER BY order_no ASC;
-                """
+                ORDER BY order_no ASC
+                LIMIT 16 OFFSET %(offset)s;
+                """,
+                {"offset": (page-1)*16}
             )
             orders = cur.fetchall()
             # selects orders that haven't been paid to display the Pay button
@@ -464,12 +475,14 @@ def orders_index():
                 FROM orders
                 WHERE order_no NOT IN(
                     SELECT order_no FROM pay
-                );
-                """
+                )
+                LIMIT 16 OFFSET %(offset)s;
+                """,
+                {"offset": (page-1)*16}
             )
             unpaid_orders = [row[0] for row in cur.fetchall()]
 
-    return render_template("orders/index.html", orders=orders, unpaid_orders=unpaid_orders)
+    return render_template("orders/index.html", orders=orders, unpaid_orders=unpaid_orders, page=page)
 
 
 

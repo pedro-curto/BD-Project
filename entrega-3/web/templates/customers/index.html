@@ -17,7 +17,7 @@
 
 <div class="main-content">
   {% for customer in customers %}
-    <article class="post" style="width: 45%;">
+    <article class="post" style="width: 50%;">
       <header>
         <div>
           <h1>{{ customer['name'] }}</h1>
@@ -37,7 +37,16 @@
     {% endif %}
   {% endfor %}
 </div>
-<div style="display: flex; justify-content: end;">
-  <button class="footer-btn" onclick="location.href='{{ url_for('create_customer') }}'">Insert a New Customer</button>
+<div style="display: flex; flex-direction: column;">
+  <div style="display: flex; justify-content: center; text-align: center;">
+    {%if page > 1 %}
+    <button class="page-btn" onclick="location.href='{{ url_for('customers_index', page=page-1)}}'"><</button>
+    {% endif %}
+    <div>page {{ page }}</div>
+    {% if customers|length == 6 %}
+    <button class="page-btn" onclick="location.href='{{ url_for('customers_index', page=page+1)}}'">></button>
+    {% endif %}
+  </div>
+  <button class="footer-btn" style="margin-left: auto;" onclick="location.href='{{ url_for('create_customer') }}'">Insert a New Customer</button>
 </div>
 {% endblock %}

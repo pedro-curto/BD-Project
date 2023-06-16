@@ -35,5 +35,16 @@
     {% endif %}
   {% endfor %}
 </div>
-  <button class="footer-btn" onclick="location.href='{{ url_for('create_order') }}'">Place New Order</button>
+<div style="display: flex; flex-direction: column;">
+  <div style="display: flex; justify-content: center; text-align: center;">
+    {%if page > 1 %}
+    <button class="page-btn" onclick="location.href='{{ url_for('orders_index', page=page-1)}}'"><</button>
+    {% endif %}
+    <div>page {{ page }}</div>
+    {% if orders|length == 16 %}
+    <button class="page-btn" onclick="location.href='{{ url_for('orders_index', page=page+1)}}'">></button>
+    {% endif %}
+  </div>
+  <button class="footer-btn" style="margin-left: auto;" onclick="location.href='{{ url_for('create_order') }}'">Place New Order</button>
+</div>
 {% endblock %}

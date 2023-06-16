@@ -1,15 +1,16 @@
 html {
   font-family: sans-serif;
-  background: #e0e0e1;
+  background: #ffffff;
   padding: 1rem;
 }
 
 body {
   max-width: 960px;
   margin: 0 auto;
-  background: #e0e0e1;
+  background: #ffffff;
   max-width: 950px;
 }
+/* e0e0e1 */
 
 .main-content {
   display: flex;
@@ -23,6 +24,7 @@ body {
   background-color: transparent; /* Transparent background */
   font-size: 16px;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .footer-btn {
@@ -47,6 +49,15 @@ body {
 
 .product-div {
   margin-top: 1rem;
+}
+
+.page-btn {
+  border: solid 1px #3590b1; /* Border color */
+  color: #3590b1; /* Text color */
+  background-color: transparent; /* Transparent background */
+  font-size: 16px;
+  margin: 0 0.5rem;
+  cursor: pointer;
 }
 
 h1, h2, h3, h4, h5, h6 {

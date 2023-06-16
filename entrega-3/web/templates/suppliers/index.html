@@ -16,7 +16,7 @@
 {% endwith %}
 <div class="main-content">
   {% for supplier in suppliers %}
-    <article class="post" style="width: 30%;">
+    <article class="post" style="width: 33%;">
       <header>
         <div>
           <h1>{{ supplier['name'] }}</h1>
@@ -36,7 +36,16 @@
     {% endif %}
   {% endfor %}
 </div>
-<div style="display: flex; justify-content: end;">
-  <button class="footer-btn" onclick="location.href='{{ url_for('create_supplier') }}'">Insert a New Supplier</button>
+<div style="display: flex; flex-direction: column;">
+  <div style="display: flex; justify-content: center; text-align: center;">
+    {%if page > 1 %}
+    <button class="page-btn" onclick="location.href='{{ url_for('suppliers_index', page=page-1)}}'"><</button>
+    {% endif %}
+    <div>page {{ page }}</div>
+    {% if suppliers|length == 9 %}
+    <button class="page-btn" onclick="location.href='{{ url_for('suppliers_index', page=page+1)}}'">></button>
+    {% endif %}
+  </div>
+  <button class="footer-btn" style="margin-left: auto;" onclick="location.href='{{ url_for('create_supplier') }}'">Insert a New Supplier</button>
 </div>
 {% endblock %}
