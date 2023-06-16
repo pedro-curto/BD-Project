@@ -2,6 +2,8 @@
 from logging.config import dictConfig
 
 import psycopg
+import datetime
+from re import match
 from flask import flash
 from flask import Flask
 from flask import jsonify
@@ -71,9 +73,14 @@ def create_product():
         description = request.form["description"]
         price = request.form["price"]
         ean = request.form["ean_number"]
-        # if ean is empty, we transform it to null not to cause an error
+        # checks ean, transforming to none if it's empty not to cause an error
         if not ean:
             ean = None
+        else:
+            if not match(r"^\d+$", ean):
+                flash("EAN number must be strictly numeric!")
+                return redirect(url_for("create_product"))
+            
         with pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -98,8 +105,7 @@ def create_product():
                     {"sku": sku, "name": name, "description": description,
                      "price": price, "ean": ean}
                 )
-                conn.commit()
-
+        flash(f"Product {name} inserted successfully!")
         return redirect(url_for("product_index"))
     # in case it is a GET request, we simply render the 'create.html' file
     else:
@@ -145,7 +151,6 @@ def delete_product(sku):
                 """,
                 {"sku": sku},
             )
-            conn.commit()
 
     return redirect(url_for("product_index"))
 
@@ -184,7 +189,6 @@ def update_product(sku):
                     {"price": price, "description": description, 
                         "sku": sku},
                 )
-            conn.commit()
         return redirect(url_for("product_index"))
 # case GET -> renders products/update.html
     else:
@@ -217,7 +221,18 @@ def create_supplier():
         address = request.form["address"]
         sku = request.form["sku"]
         date = request.form["date"]
-
+        
+        # validates input
+        error = ""
+        if not match(r"^\d+$", tin):
+            error = "TIN must be a number!"
+        # portuguese address format (<street ...> xxxx-xxx city)
+        if not match(r".+\s\d{4}-\d{3}\s.+", address):
+            error = "Address must end in a postal code and city!"
+        if error:
+            flash(error)
+            return redirect(url_for("create_supplier"))
+        
         with pool.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -255,8 +270,7 @@ def create_supplier():
                     {"tin": tin, "name": name, "address": address, "sku": sku, 
                      "date": date},
                 )
-                conn.commit()
-
+        flash(f"Supplier {name} created successfully!")
         return redirect(url_for("suppliers_index"))
     # in case it is a GET request, we simply render the 'create.html' file
     else:
@@ -284,7 +298,6 @@ def delete_supplier(tin):
                 """,
                 {"tin": tin},
             )
-            conn.commit()
 
     return redirect(url_for("suppliers_index"))
 
@@ -331,6 +344,18 @@ def create_customer():
     phone = request.form["phone"]
     address = request.form["address"]
     
+    # input validation
+    error = ""
+    if not match(".+@.+", email):
+        error = "Insert a valid email! (name@domain)"
+    if not match("\d{9}", phone):
+        error = "Insert a valid phone number! (9 digits long)"
+    if not match(r".+\s\d{4}-\d{3}\s.+", address):
+        error = "Address must end in a postal code and city!"
+    if error:
+        flash(error)
+        return redirect(url_for("create_customer"))
+    
     with pool.connection() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -341,7 +366,7 @@ def create_customer():
                 {"cust_no": cust_no, "name": name, "email": email, 
                     "phone": phone, "address": address}
             )
-            
+    flash("Customer created successfully!")
     return redirect(url_for("customers_index"))
     
 
@@ -411,8 +436,6 @@ def delete_customer(cust_no):
                 """,
                 {"cust_no": cust_no},
             )
-
-        conn.commit()
 
     return redirect(url_for("customers_index"))
 
@@ -561,18 +584,6 @@ def pay_order(order_no):
         cust_no = request.form["cust_no"]
         with pool.connection() as conn:
             with conn.cursor() as cur:
-                # only the customer that placed the order can pay for it
-                # cur.execute(
-                #     """
-                #     SELECT cust_no
-                #     FROM orders
-                #     WHERE order_no = %(order_no)s;
-                #     """,
-                #     {"order_no": order_no},
-                # ) 
-                # order_placed_by = cur.fetchone()[0]
-                # if cust_no == order_placed_by:
-                
                 # adds to pay table
                 cur.execute(
                     """
@@ -584,10 +595,7 @@ def pay_order(order_no):
             
                 flash("Payment successful!", "success")
                 return redirect(url_for("orders_index"))
-                # else:
-                #     flash("The order must be paid by the same customer that \
-                #            placed it!", "danger")
-                #     return redirect(url_for("pay_order", order_no=order_no))
+
     # case GET -> fetches parameters and renders orders/pay.html
     else:
         with pool.connection() as conn:

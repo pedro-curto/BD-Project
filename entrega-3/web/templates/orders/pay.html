@@ -5,30 +5,13 @@
 {% endblock %}
 
 {% block content %}
-{% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <ul class="flash-messages">
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
-  <h2>Order Details</h2>
-  <p>Order number: {{ order_no }}</p>
-  <p>Order cost: {{ order_price }}</p>
-  <p>Order placed by customer {{ order_info[0] }}</p>
-  <p>Order placed on {{ order_info[1] }}</p>  
-  <button type="submit">Pay</button>
-
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <ul class="flash-messages">
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
+  <form method="POST">
+    <h2>Order Details</h2>
+    <label>Order number: {{ order_no }}<br><br>
+    <label>Order cost: {{ order_price }}<br><br>
+    <input type="hidden" name="cust_no" value="{{ order_info[0] }}">Order placed by customer {{ order_info[0] }}<br><br>
+    <label>Order placed on {{ order_info[1] }}<br><br>
+    <button type="submit">Pay</button>
+  </form>
 
 {% endblock %}

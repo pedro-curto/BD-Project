@@ -5,6 +5,15 @@
 {% endblock %}
 
 {% block content %}
+  {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flash-messages" style="list-style-type: none">
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
   <div class="main-content">
   {% for product in products %}
     <article class="post" style="width: 30%;">
