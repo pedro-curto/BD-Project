@@ -513,21 +513,21 @@ def create_order():
                         customer number.")
                 return redirect(url_for("create_order"))
             
-            # iterates over the request items, in order to add all ordered 
-            # products (who have quantity > 0) to the contains table
-            # inserts every product ordered in the contains table
+            # checks if the order contains at least one product, and fetches
+            # product quantities
+            has_products = False
+            quantities = []
             for key, value in request.form.items():
                 if key.startswith("qty"):
-                    sku = key[3:] 
                     qty = int(value)
                     if qty > 0:
-                        cur.execute(
-                            """
-                            INSERT INTO contains (order_no, sku, qty)
-                            VALUES(%(order_no)s, %(sku)s, %(qty)s);
-                            """,
-                            {"order_no": order_no, "sku": sku, "qty": qty},
-                            )
+                        sku = key[3:]
+                        has_products = True
+                        quantities.append((sku, qty))
+            if not has_products:
+                flash("An order must contain at least one product!")
+                return redirect(url_for("create_order"))
+            
             # inserts the order info to the orders table
             cur.execute(
                 """
@@ -536,6 +536,17 @@ def create_order():
                 """,
                 {"order_no": order_no, "cust_no": cust_no, "date": date},
             )
+            
+            # inserts every product ordered in the contains table
+            for sku, qty in quantities:
+                cur.execute(
+                    """
+                    INSERT INTO contains (order_no, sku, qty)
+                    VALUES(%(order_no)s, %(sku)s, %(qty)s);
+                    """,
+                    {"order_no": order_no, "sku": sku, "qty": qty},
+                )
+                
             # finally, checks if the order has been paid: if so, adds to "pay"
             pay_option = request.form["pay_optn"]
             if pay_option == "now":
